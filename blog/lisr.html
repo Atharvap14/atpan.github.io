@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Why LISR works: local pieces, full rank — Atharva Pandey</title>
+  <title>Why LISR works: local pieces, full rank | Atharva Pandey</title>
   <meta name="description" content="An interactive 3D explainer of LISR (AAAI 2024): why gradient descent gets stuck in a subspace, and how Voronoi cells and a query-selection rule make the problem full rank and well conditioned.">
   <meta name="theme-color" content="#f3eee2">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231b1a17'/%3E%3Cpath d='M17 47 L32 15 L47 47 M23 37 H41' stroke='%23f3eee2' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
@@ -32,7 +32,7 @@
     <p class="crumb"><a href="../index.html#blog">← All writing</a></p>
     <p class="kicker">explainer · AAAI 2024</p>
     <h1>Why LISR works: local pieces, full rank</h1>
-    <p class="dek">A 3D scan is a cloud of noisy, partial points. LISR turns it into a surface as a <em class="hl">linear</em> sum of compact pieces — and the reason it trains well is a small piece of linear algebra you can rotate in 3D below.</p>
+    <p class="dek">A 3D scan is a cloud of noisy, partial points. LISR turns it into a surface as a <em>linear</em> sum of compact pieces, and the reason it trains well is a small piece of linear algebra you can rotate in 3D below.</p>
     <p class="byline">Atharva Pandey · Sept 2026 · Based on <a href="https://ojs.aaai.org/index.php/AAAI/article/view/28239" target="_blank" rel="noopener">LISR (AAAI 2024)</a> with V. Yadav, R. Nagar and S. Chaudhury</p>
 
     <div class="paper solo" data-scene="lisr">
@@ -40,12 +40,12 @@
     </div>
 
     <h2>A surface as a sum of basis functions</h2>
-    <p>We describe an object by its signed distance field <span class="math">f : ℝ³ → ℝ</span>: <span class="math">f(x)</span> is how far <span class="math">x</span> is from the surface, and the surface is where <span class="math">f = 0</span>. LISR models <span class="math">f</span> as a <em class="hl">linear</em> combination of basis functions:</p>
+    <p>We describe an object by its signed distance field <span class="math">f : ℝ³ → ℝ</span>: <span class="math">f(x)</span> is how far <span class="math">x</span> is from the surface, and the surface is where <span class="math">f = 0</span>. LISR models <span class="math">f</span> as a <em>linear</em> combination of basis functions:</p>
     <div class="eqn"><span class="math">f(x) = Σ<sub>i=1</sub><sup>n</sup> α<sub>i</sub> φ<sub>i</sub>(x)</span><small>coefficients α<sub>i</sub>, basis functions φ<sub>i</sub></small></div>
     <p>Fitting the scan means minimising the squared error to the ground-truth SDF over a set of query points. Stack the basis functions evaluated at the queries into a matrix <span class="math">Vᵀ</span> and this is the linear system <span class="math">Vᵀα = s<sub>gt</sub></span>. All the difficulty lives in the matrix <span class="math">VVᵀ</span>.</p>
 
     <h2>The optimiser is stuck in a subspace</h2>
-    <p>The gradient of the loss is <span class="math">2VVᵀ(α − (VVᵀ)⁻¹V s<sub>gt</sub>)</span>. Every gradient step is therefore a vector in the range of <span class="math">VVᵀ</span>, so gradient descent can only ever land in <span class="math">α₀ + range(VVᵀ)</span> &mdash; a small, local subspace around where it started. That gives the paper&rsquo;s first result:</p>
+    <p>The gradient of the loss is <span class="math">2VVᵀ(α − (VVᵀ)⁻¹V s<sub>gt</sub>)</span>. Every gradient step is therefore a vector in the range of <span class="math">VVᵀ</span>, so gradient descent can only ever land in <span class="math">α₀ + range(VVᵀ)</span>: a small, local subspace around where it started. That gives the paper&rsquo;s first result:</p>
     <div class="note"><p><strong>Theorem 1.</strong> Gradient descent reaches the optimal solution of <span class="math">Vᵀα = s<sub>gt</sub></span> if and only if <span class="math">VVᵀ</span> is full rank.</p></div>
 
     <div class="fig" id="fig-stuck"></div>
@@ -64,13 +64,13 @@
 
     <figure class="paperfig">
       <img src="../assets/blog/lisr/fig1-sensitivity.jpg" alt="Four renderings of an aeroplane whose shape degrades as noise of increasing size is added to the coefficients" width="653" height="188" loading="lazy">
-      <figcaption><b>From the paper, Figure 1.</b> Perturbing the coefficients of a global-support (HRBF) basis with noise of size &eta; = 10<sup>&minus;6</sup>, 10<sup>&minus;5</sup>, 10<sup>&minus;4</sup>, 10<sup>&minus;2</sup>: the shape is far too sensitive &mdash; already at 10<sup>&minus;5</sup> one wing is clipped.</figcaption>
+      <figcaption><b>From the paper, Figure 1.</b> Perturbing the coefficients of a global-support (HRBF) basis with noise of size &eta; = 10<sup>&minus;6</sup>, 10<sup>&minus;5</sup>, 10<sup>&minus;4</sup>, 10<sup>&minus;2</sup>: the shape is far too sensitive: already at 10<sup>&minus;5</sup> one wing is clipped.</figcaption>
     </figure>
 
     <h2>Cut space into Voronoi cells</h2>
-    <p>The fix is to make each basis <em class="hl">local</em>. Give every kernel point <span class="math">p<sub>i</sub></span> its own 3D Voronoi cell, and switch its basis on only inside that cell:</p>
+    <p>The fix is to make each basis <em>local</em>. Give every kernel point <span class="math">p<sub>i</sub></span> its own 3D Voronoi cell, and switch its basis on only inside that cell:</p>
     <div class="eqn"><span class="math">f(x) = Σ<sub>i=1</sub><sup>q</sup> r<sub>i</sub>(x) · β<sub>i</sub>ᵀ ∇‖x − p<sub>i</sub>‖³</span><small>r<sub>i</sub>(x) = 1 inside the cell of p<sub>i</sub>, 0 outside · three coefficients β<sub>i</sub> per kernel point</small></div>
-    <p>Now pick at least three linearly independent queries in every cell. Group the queries by cell and <span class="math">Vᵀ</span> becomes <em class="hl">block-diagonal</em>, with one 3×3 block per cell &mdash; and the rank of a block-diagonal matrix is the sum of its blocks&rsquo; ranks.</p>
+    <p>Now pick at least three linearly independent queries in every cell. Group the queries by cell and <span class="math">Vᵀ</span> becomes <em>block-diagonal</em>, with one 3×3 block per cell, and the rank of a block-diagonal matrix is the sum of its blocks&rsquo; ranks.</p>
     <div class="note"><p><strong>Theorem 2.</strong> With the compactly supported (Voronoi) basis and this query selection, <span class="math">VVᵀ</span> is full rank.</p></div>
 
     <div class="fig" id="fig-voronoi"></div>

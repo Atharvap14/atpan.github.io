@@ -1,36 +1,28 @@
 /*
  * Interactive figures for the DeduCE explainer.
- *  1. Walk a proof – premises, hops and the window the model is checked on
- *  2. Where accuracy goes – a schematic of the paper's finding (not real data)
+ *  1. Walk a proof: premises, hops and the window the model is checked on
+ *  2. Where accuracy goes: a schematic of the paper's finding (not real data)
  */
 (function () {
   'use strict';
   var V = window.Viz, el = V.el, h = V.h;
 
-  var PREM = [
-    ['P1', 'A bakery bakes 12 loaves an hour.'],
-    ['P2', 'It bakes for 5 hours a day.'],
-    ['P3', 'Each loaf sells for $3.'],
-    ['P4', 'Ingredients cost $50 a day.'],
-    ['P5', '10% of the profit is paid as tax.'],
+  // The example from Figure 1 of the paper: "James writes a 3-page letter to 2 different friends twice a week.
+  // How many pages does he write a year?"  Reference answer: 3 * 2 * 2 = 12 pages a week, 52 * 12 = 624 pages.
+  var EXTRA = [
+    { t: (v) => 'Each page costs $' + v.cost.toFixed(2) + ' to print.', step: (v, x) => ({ t: 'Cost a year = ' + fmt(x) + ' pages × $' + v.cost.toFixed(2) + ' = $' + fmt(x * v.cost), val: x * v.cost }), unit: 'cost' },
+    { t: (v) => 'He gets a ' + v.disc + '% discount on printing.', step: (v, x) => ({ t: 'After discount = $' + fmt(x) + ' × ' + (100 - v.disc) / 100 + ' = $' + fmt(x * (100 - v.disc) / 100), val: x * (100 - v.disc) / 100 }) },
+    { t: (v) => 'Postage is $' + v.post.toFixed(2) + ' per letter.', step: (v, x) => ({ t: 'Total with postage = $' + fmt(x) + ' + ' + fmt(v.friends * v.times * 52) + ' letters × $' + v.post.toFixed(2) + ' = $' + fmt(x + v.friends * v.times * 52 * v.post), val: x + v.friends * v.times * 52 * v.post }) },
   ];
-  var DIST = ['The shop has 4 employees.', 'The oven was installed in 2019.', 'The shop is on Maple Street.', 'The owner has a dog named Biscuit.'];
-  var STEPS = [
-    ['S1', 'Loaves a day = 12 × 5 = 60', 'from P1, P2'],
-    ['S2', 'Revenue = 60 × $3 = $180', 'from S1, P3'],
-    ['S3', 'Profit = $180 − $50 = $130', 'from S2, P4'],
-    ['S4', 'Tax = 10% of $130 = $13', 'from S3, P5'],
-    ['S5', 'Take-home = $130 − $13 = $117', 'from S3, S4'],
-  ];
+  function fmt(n) { return (Math.round(n * 100) / 100).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
 
-  /* ---------------------------------------------------------- figure 1 */
   (function walk() {
     var root = document.getElementById('fig-walk');
-    h('div', 'fig-title', 'Figure 1 · Walk a proof', root);
-    h('div', 'fig-sub', 'A chain of thought is a proof: premises go in, each hop derives something new. DeduCE looks at two things separately &ndash; how many premises the model has to read, and how many hops it has to chain.', root);
+    h('div', 'fig-title', 'Figure 1 · From a benchmark problem to a novel one', root);
+    h('div', 'fig-sub', 'The paper&rsquo;s own example. Templatise the problem, mutate its numbers so it can&rsquo;t be looked up, and add reasoning hops; the reference proof is recomputed each time. Then look at one window of hops at a time.', root);
     var controls = h('div', 'controls-row', null, root);
     var box = h('div', 'wk', null, root);
-    var q = h('div', 'q', '<b>Question.</b> How much does the owner take home per day?', box);
+    var qEl = h('div', 'q', null, box);
     var colP = h('div', null, null, box), colS = h('div', null, null, box);
     h('h4', null, 'premises the model reads', colP);
     var olP = h('ol', null, null, colP);
@@ -38,29 +30,40 @@
     var olS = h('ol', null, null, colS);
     var out = h('div', 'readout', null, root);
 
-    var extra = V.slider(controls, 'Extra premises', 0, 4, 1, 0, function (v) { return '+' + v; }, upd);
-    var win = V.slider(controls, 'Hops to derive', 1, 5, 1, 2, function (v) { return v; }, upd);
-    var start = V.slider(controls, 'Window starts at hop', 1, 5, 1, 2, function (v) { return v; }, upd);
+    var st = { pages: 3, friends: 2, times: 2, cost: 0.05, disc: 10, post: 0.5 };
+    var sPages = V.slider(controls, 'Pages per letter', 1, 12, 1, 3, function (v) { return v; }, function (v) { st.pages = v; upd(); });
+    var sFr = V.slider(controls, 'Friends', 1, 20, 1, 2, function (v) { return v; }, function (v) { st.friends = v; upd(); });
+    var sTi = V.slider(controls, 'Letters a week', 1, 7, 1, 2, function (v) { return v; }, function (v) { st.times = v; upd(); });
+    var sEx = V.slider(controls, 'Extra hops', 0, 3, 1, 0, function (v) { return '+' + v; }, function (v) { upd(); });
+    var sWin = V.slider(controls, 'Window: hops', 1, 5, 1, 2, function (v) { return v; }, function (v) { upd(); });
 
     function upd() {
-      var n = extra.get(), k = win.get(), s0 = start.get();
-      if (s0 + k - 1 > 5) { s0 = 5 - k + 1; start.input.value = s0; start.input.dispatchEvent(new Event('input')); return; }
-      start.input.max = 5 - k + 1;
-      olP.textContent = '';
-      var list = PREM.map(function (p) { return { id: p[0], t: p[1], d: false }; });
-      for (var i = 0; i < n; i++) list.splice(1 + i * 2, 0, { id: '·', t: DIST[i], d: true });
-      list.forEach(function (p) { h('li', p.d ? 'distract' : '', '<span class="id">' + p.id + '</span>' + p.t, olP); });
+      var nEx = sEx.get(), k = sWin.get(), n = 2 + nEx;
+      k = Math.min(k, n); sWin.input.max = n;
+      var p = st.pages, f = st.friends, t = st.times, orig = (p === 3 && f === 2 && t === 2);
+      var prem = [
+        'James writes a ' + p + '-page letter.', 'He writes to ' + f + ' different friends.', 'He writes ' + t + ' times a week.', 'A year has 52 weeks.'
+      ].map(function (x) { return { t: x }; });
+      for (var i = 0; i < nEx; i++) prem.push({ t: EXTRA[i].t(st) });
+      var wk = p * f * t, yr = wk * 52, steps = [
+        { t: 'Pages a week = ' + p + ' × ' + f + ' × ' + t + ' = ' + wk, u: 'from the first three premises' },
+        { t: 'Pages a year = 52 × ' + wk + ' = ' + fmt(yr), u: 'from the previous hop and the last premise' },
+      ];
+      var x = yr;
+      for (i = 0; i < nEx; i++) { var r = EXTRA[i].step(Object.assign({}, st), x); steps.push({ t: r.t, u: 'from the previous hop and premise ' + (5 + i) }); x = r.val; }
+      qEl.innerHTML = '<b>Question.</b> James writes a ' + p + '-page letter to ' + f + ' different friends ' + t + ' times a week. ' + (nEx ? 'What does it cost him in a year?' : 'How many pages does he write a year?');
+      olP.textContent = ''; prem.forEach(function (q, j) { h('li', '', '<span class="id">P' + (j + 1) + '</span>' + q.t, olP); });
       olS.textContent = '';
-      STEPS.forEach(function (st, i) {
-        var idx = i + 1, cls = idx < s0 ? 'given' : idx < s0 + k ? 'win' : 'later';
-        h('li', cls, '<span class="id">' + st[0] + '</span>' + st[1] + '<span class="uses">' + st[2] + '</span>', olS);
-      });
-      var ctx = list.length;
-      out.innerHTML = '<div class="pair"><span>premises in context: <b>' + ctx + '</b>' + (n ? ' (' + n + ' irrelevant)' : '') + '</span><span>hops to chain: <b>' + k + '</b></span></div>' +
-        '<div class="pair"><span>The reference proof up to hop ' + (s0 - 1) + ' is given; the model must produce the highlighted hop' + (k > 1 ? 's' : '') + ' itself, and its own trace is checked against the reference.</span></div>';
+      // window starts at the first hop the model must produce; earlier hops are given
+      var start = Math.max(1, Math.min(n - k + 1, sStart));
+      steps.forEach(function (s, j) { var idx = j + 1, cls = idx < start ? 'given' : idx < start + k ? 'win' : 'later'; h('li', cls, '<span class="id">S' + idx + '</span>' + s.t + '<span class="uses">' + s.u + '</span>', olS); });
+      out.innerHTML = '<div class="pair"><span>' + (orig ? 'This is the <b>original</b> benchmark problem: its answer, <b>624</b>, can be memorised.' : 'A <b>novel</b> problem with the same structure. The memorised answer <b>624</b> is now wrong; the right answer is <b>' + fmt(yr) + '</b> pages a year.') + '</span></div>' +
+        '<div class="pair"><span>premises in context: <b>' + prem.length + '</b></span><span>hops in the proof: <b>' + n + '</b></span><span>window: hops <b>' + start + (k > 1 ? '&ndash;' + (start + k - 1) : '') + '</b> (earlier hops are given, the model produces the window, and its trace is checked against the reference)</span></div>';
     }
+    var sStart = 1;
+    var sSt = V.slider(controls, 'Window starts at hop', 1, 5, 1, 1, function (v) { return v; }, function (v) { sStart = v; upd(); });
     upd();
-    h('p', 'fig-cap', 'A made-up bakery problem, not one from the benchmark. Extra premises make the model read more; more hops make it chain more. The paper varies each on its own.', root);
+    h('p', 'fig-cap', 'Try the original numbers (3 pages, 2 friends, 2 a week) and you get the paper&rsquo;s example and its memorable answer, 624. Change any number and the same problem becomes novel; add hops and the chain the model must follow gets longer. DeduCE measures both effects separately.', root);
   })();
 
   /* ---------------------------------------------------------- figure 2 */
@@ -110,8 +113,8 @@
       chart(svgs[0], 'more premises', 'premises', novel);
       chart(svgs[1], 'more reasoning hops', 'hops', novel);
       ro.innerHTML = novel
-        ? '<div class="pair"><span>On <b>novel</b> problems, reading more premises barely hurts &mdash; but chaining more hops does: deductive consistency falls by roughly <b>15&ndash;30%</b> going from 1 to 5 hops.</span></div>'
-        : '<div class="pair"><span>On the <b>original</b> benchmark the same models look near-perfect at every length &mdash; memorisation masks the decay.</span></div>';
+        ? '<div class="pair"><span>On <b>novel</b> problems, reading more premises barely hurts, but chaining more hops does: deductive consistency falls by roughly <b>15&ndash;30%</b> going from 1 to 5 hops.</span></div>'
+        : '<div class="pair"><span>On the <b>original</b> benchmark the same models look near-perfect at every length: memorisation masks the decay.</span></div>';
     }
     bo.onclick = function () { mode = 'orig'; draw(); }; bn.onclick = function () { mode = 'novel'; draw(); };
     draw();

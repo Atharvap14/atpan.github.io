@@ -1,5 +1,5 @@
 /*
- * viz.js — tiny helpers for the interactive figures in the blog posts.
+ * viz.js: tiny helpers for the interactive figures in the blog posts.
  * Everything here is computed live in the browser (no data files, no libraries).
  */
 (function (g) {

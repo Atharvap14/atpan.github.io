@@ -1,6 +1,6 @@
 # atpan.github.io
 
-Personal portfolio site — plain HTML/CSS/JS, no build step, hosted on GitHub Pages.
+Personal portfolio site: plain HTML/CSS/JS, no build step, hosted on GitHub Pages.
 
 Each paper gets a short **animated sketch** instead of a paragraph. Sketches contain no
 sentences: text appears only on arrows or as one highlighted word.
@@ -30,12 +30,12 @@ python3 -m http.server 8000   # then open http://localhost:8000
 
 ## Editing
 
-- **Text / links / authors** — edit the `<article class="paper">` blocks in `index.html`.
-- **News, experience, education** — plain `<li>` / `<div class="edu-item">` blocks in `index.html` and `experience.html`.
-- **Add a paper** — copy an `<article>`, give it a new `data-scene="name"`, and add
+- **Text / links / authors**: edit the `<article class="paper">` blocks in `index.html`.
+- **News, experience, education**: plain `<li>` / `<div class="edu-item">` blocks in `index.html` and `experience.html`.
+- **Add a paper**: copy an `<article>`, give it a new `data-scene="name"`, and add
   `SCENES.name = function (sk) { … }` in `js/scenes.js`.
-- **Colours** — the `--background`, `--card`, `--sk-*` variables at the top of `css/style.css`.
-- **Fonts** — `--font-sans` and `--font-hand` in `css/style.css`.
+- **Colours**: the `--background`, `--card`, `--sk-*` variables at the top of `css/style.css`.
+- **Fonts**: `--font-sans` and `--font-hand` in `css/style.css`.
 
 ### Writing a scene
 

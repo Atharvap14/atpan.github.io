@@ -1,5 +1,5 @@
 /*
- * glyphs.js — small hand-drawn objects built on top of the Sketch engine.
+ * glyphs.js: small hand-drawn objects built on top of the Sketch engine.
  * Every glyph takes a position (and usually a scale) and returns an Item
  * (a group) you can draw / pop / move on the timeline.
  * Glyphs contain no letters: labels only ever appear on arrows or as

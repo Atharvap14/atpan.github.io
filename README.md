@@ -15,7 +15,7 @@ python3 -m http.server 8000   # then open http://localhost:8000
 
 | Path | What |
 | --- | --- |
-| `index.html` | All page copy: hero, the ten paper cards, "Also built", footer |
+| `index.html` | All page copy: hero, the ten paper cards, footer |
 | `css/style.css` | Design tokens (shadcn-style names) for the beige theme and the dark "chalkboard" theme |
 | `js/sketch.js` | Tiny hand-drawn animation engine (wobbly strokes, pen-draw timeline, play/pause/scrub) |
 | `js/glyphs.js` | Reusable doodles: person, robot, card, bulb, battery, gauge, magnifier, … |

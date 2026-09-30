@@ -221,16 +221,6 @@ section { padding: 56px 0 8px; }
 .authors b { color: var(--foreground); font-weight: 600; }
 .paper-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 6px; }
 
-/* ---------- also built ---------- */
-.also { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
-.also a {
-  display: block; text-decoration: none; padding: 18px 20px; border: 1px dashed color-mix(in srgb, var(--sk-gray) 70%, transparent);
-  border-radius: var(--radius); transition: background 0.15s, border-color 0.15s, transform 0.15s;
-}
-.also a:hover { background: var(--card); border-style: solid; border-color: var(--sk-ink); transform: translateY(-2px) rotate(-0.4deg); }
-.also strong { display: block; font-weight: 600; letter-spacing: -0.01em; }
-.also span { color: var(--muted-foreground); font-size: 0.9rem; line-height: 1.45; display: block; margin-top: 4px; }
-
 /* ---------- footer ---------- */
 footer { margin-top: 84px; border-top: 1px solid var(--border); padding: 40px 0 56px; }
 footer .container { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between; }

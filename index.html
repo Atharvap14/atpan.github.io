@@ -6,8 +6,9 @@
   <title>Atharva Pandey</title>
   <meta name="description" content="Atharva Pandey: research on how AI systems reason, explained in animated sketches.">
   <meta name="theme-color" content="#f3eee2">
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=3">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=3">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=3">
   <script>try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <link rel="preload" href="assets/fonts/roboto.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/caveat.woff2" as="font" type="font/woff2" crossorigin>
@@ -103,7 +104,7 @@
             <li><span class="when">Sep 2025</span><span class="what">Talk on <b>Mamba</b> at the <b>Hidden Layers</b> reading group, <b>IIIT Bengaluru</b>. <a href="https://www.youtube.com/watch?v=mVEwQ8dGNjk" target="_blank" rel="noopener">Watch on YouTube ↗</a> · <a href="experience.html#talks">Details</a></span></li>
             <li><span class="when">Jul 2025</span><span class="what"><a href="https://arxiv.org/abs/2507.22758" target="_blank" rel="noopener">MASCA</a>, a layered multi-agent system for credit assessment, is on arXiv.</span></li>
             <li><span class="when">Jun 2025</span><span class="what"><a href="https://arxiv.org/abs/2506.15455" target="_blank" rel="noopener">Re-Imagine</a> at <b>ICML 2025</b>.</span></li>
-            <li><span class="when">Apr 2025</span><span class="what"><a href="https://arxiv.org/abs/2504.07080" target="_blank" rel="noopener">DeduCE</a> at the <b>ICLR 2025 Workshop on Reasoning and Planning</b>.</span></li>
+            <li><span class="when">Apr 2025</span><span class="what"><a href="https://openreview.net/pdf?id=JpeDhIHEt9" target="_blank" rel="noopener">DeduCE</a> at the <b>ICLR 2025 Workshop on Reasoning and Planning</b>.</span></li>
             <li><span class="when">Jul 2024</span><span class="what"><a href="https://arxiv.org/abs/2407.07612" target="_blank" rel="noopener">Teaching transformers causal reasoning through axiomatic training</a> on arXiv; later at <b>ICML 2025</b>.</span></li>
             <li><span class="when">Mar 2024</span><span class="what"><a href="https://ojs.aaai.org/index.php/AAAI/article/view/28239" target="_blank" rel="noopener">LISR</a> published in the Proceedings of <b>AAAI 2024</b>.</span></li>
           </ul>
@@ -156,7 +157,7 @@
             <div class="thumb"><svg class="sk" data-thumb="deduce" viewBox="0 0 800 520" aria-hidden="true"></svg></div>
             <div class="body">
               <h3>Do language models reason, or just remember? Count the hops</h3>
-              <p>Grade a chain of thought like a proof, and watch accuracy decay with hops rather than premises.</p>
+              <p>A full walkthrough of the paper: grade a chain of thought like a proof, and watch consistency decay with hops rather than premises.</p>
               <div class="badges"><span class="badge solid">Explainer</span><span class="badge">DeduCE</span></div>
             </div>
           </a>
@@ -225,13 +226,13 @@
           </article>
 
           <article class="paper" data-scene="deduce">
-            <div class="sketch"><div class="paper-fig"><img src="assets/papers/deduce.jpg" alt="Figure 1 of the paper: the pipeline for deductive consistency evaluation" loading="lazy"></div><span class="fig-hint">Figure from the paper. Hover to see it explained.</span><svg class="sk" role="img" aria-label="Sketch: adding more premises leaves accuracy flat, but in a chain of dominoes standing for reasoning hops the later ones never fall and accuracy decays."></svg></div>
+            <div class="sketch"><div class="paper-fig"><img src="assets/blog/deduce/fig1-windows.jpg" alt="Figure 1 of the paper: standard evaluation versus DeduCE windows of prefix and hop" loading="lazy"></div><span class="fig-hint">Figure from the paper. Hover to see it explained.</span><svg class="sk" role="img" aria-label="Sketch: adding more premises leaves accuracy flat, but in a chain of dominoes standing for reasoning hops the later ones never fall and accuracy decays."></svg></div>
             <div class="meta">
               <div class="badges"><span class="badge solid">2025</span><span class="badge">ICLR 2025 Workshop</span></div>
               <h3>Deduce: Deductive consistency as a framework to evaluate LLM reasoning</h3>
               <p class="gist">More premises barely hurt LLMs; more reasoning hops do, a decay that memorised benchmarks hide.</p>
               <p class="authors"><b>A. Pandey</b>, K. Dubey, R. Sharma, A. Sharma</p>
-              <div class="paper-links"><a class="btn btn-sm" href="https://arxiv.org/abs/2504.07080" target="_blank" rel="noopener">arXiv</a></div>
+              <div class="paper-links"><a class="btn btn-sm" href="https://openreview.net/pdf?id=JpeDhIHEt9" target="_blank" rel="noopener">OpenReview</a><a class="btn btn-sm" href="blog/deduce.html">Walkthrough</a><a class="btn btn-sm" href="https://arxiv.org/abs/2504.07080" target="_blank" rel="noopener">arXiv</a></div>
             </div>
           </article>
 

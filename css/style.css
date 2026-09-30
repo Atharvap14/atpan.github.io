@@ -102,7 +102,7 @@ h1, h2, h3, p { margin: 0; }
 
 :focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; border-radius: 6px; }
 
-.container { width: min(1080px, 100% - clamp(48px, 12vw, 176px)); margin-inline: auto; }
+.container { width: min(1000px, 100% - clamp(64px, 14vw, 240px)); margin-inline: auto; }
 .skip { position: absolute; left: -999px; top: 8px; background: var(--primary); color: var(--primary-foreground); padding: 8px 14px; border-radius: 8px; z-index: 50; }
 .skip:focus { left: 12px; }
 

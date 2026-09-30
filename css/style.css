@@ -323,3 +323,7 @@ svg.sk text { user-select: none; -webkit-user-select: none; }
 @media (max-width: 520px) {
   .nav-links a[href='#about'], .nav-links a[href='#news'] { display: none; }
 }
+
+/* organisation logos on experience and education entries */
+.with-logo { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; align-items: start; }
+.org-logo { width: 44px; height: 44px; object-fit: contain; border-radius: 10px; background: #fff; border: 1px solid var(--border); padding: 4px; }

@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atharva Pandey</title>
+  <meta name="description" content="Atharva Pandey — research on how AI systems reason, explained in animated sketches.">
+  <meta name="theme-color" content="#f3eee2">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231b1a17'/%3E%3Cpath d='M17 47 L32 15 L47 47 M23 37 H41' stroke='%23f3eee2' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <script>try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <link rel="preload" href="assets/fonts/roboto.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/caveat.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body id="top">
+  <a class="skip" href="#work">Skip to work</a>
+
+  <header class="nav">
+    <div class="container">
+      <a class="brand" href="#top">Atharva Pandey</a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#work">Work</a>
+        <a href="#also">Also built</a>
+        <a href="#contact">Links</a>
+        <button class="btn btn-icon theme-toggle" type="button" aria-label="Toggle light / dark">
+          <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <!-- ============================ hero ============================ -->
+      <section class="hero" aria-labelledby="name">
+        <div class="hero-copy">
+          <p class="eyebrow">hi, I’m</p>
+          <h1 id="name">Atharva Pandey</h1>
+          <svg class="underline sk doodle" id="name-underline" viewBox="0 0 420 34" aria-hidden="true"></svg>
+          <p class="lead">I work on how AI systems reason — testing <em>where language models break</em>, teaching transformers causality, and looking inside time-series models.</p>
+          <p class="earlier">Earlier: 3D vision and educational games.</p>
+          <div class="hero-links">
+            <a class="btn btn-primary" href="https://scholar.google.com/citations?user=NfsKI5kAAAAJ&amp;hl=en" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
+              Google Scholar
+            </a>
+            <a class="btn" href="https://github.com/Atharvap14" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+              GitHub
+            </a>
+            <a class="btn" href="https://www.linkedin.com/in/atpan/" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+              LinkedIn
+            </a>
+          </div>
+        </div>
+
+        <figure class="portrait">
+          <div class="polaroid"><img src="assets/atharva.png" width="388" height="388" alt="Portrait of Atharva Pandey"></div>
+          <svg class="portrait-doodle sk doodle" id="portrait-doodle" viewBox="0 0 500 500" aria-hidden="true"></svg>
+        </figure>
+      </section>
+
+      <!-- ============================ work ============================ -->
+      <section id="work" aria-labelledby="work-h">
+        <div class="section-head">
+          <span class="h2-wrap"><h2 id="work-h">Work</h2><svg class="sk doodle" data-doodle="scribble" viewBox="0 0 240 14" aria-hidden="true"></svg></span>
+          <p class="section-note">ten papers, ten sketches — press play, or drag the line to scrub</p>
+        </div>
+
+        <div class="papers">
+
+          <article class="paper" data-scene="reason">
+            <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: a person and an LLM each read the same sunscreen concept. Their purchase intent matches, but the person’s reasons differ from the LLM’s, which simply echo the product — so the audit flags the reasons."></svg></div>
+            <div class="meta">
+              <div class="badges"><span class="badge solid">2026</span><span class="badge">arXiv preprint</span></div>
+              <h3>Reason-Mediated Behavioral Models for Auditing LLM Social Simulators</h3>
+              <p class="gist">An LLM survey respondent can match the human answer and still get there for the wrong reasons — so we audit the reasons, not just the outcome.</p>
+              <p class="authors"><b>A. Pandey</b>, G. Jajoo</p>
+              <div class="paper-links"><a class="btn btn-sm" href="https://arxiv.org/abs/2607.24649" target="_blank" rel="noopener">arXiv</a></div>
+            </div>
+          </article>
+
+          <article class="paper" data-scene="reimagine">
+            <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: a benchmark question becomes symbolic code, gets mutated with a roll of the dice into new questions of rising difficulty, and a model’s accuracy drops as they get harder."></svg></div>
+            <div class="meta">
+              <div class="badges"><span class="badge solid">2025</span><span class="badge">arXiv preprint</span></div>
+              <h3>Re-imagine: Symbolic benchmark synthesis for reasoning evaluation</h3>
+              <p class="gist">Lift benchmark problems into code, mutate them, and turn them back into questions that memorisation alone can’t solve.</p>
+              <p class="authors">X. Xu, R. Lawrence, K. Dubey, <b>A. Pandey</b>, R. Ueno, F. Falck, A. V. Nori, et al.</p>
+              <div class="paper-links"><a class="btn btn-sm" href="https://arxiv.org/abs/2506.15455" target="_blank" rel="noopener">arXiv</a></div>
+            </div>
+          </article>
+
+          <article class="paper" data-scene="masca">
+            <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: a loan applicant’s file passes through layers of specialised LLM agents that weigh risk and reward; a top agent approves, and a magnifier checks the process for fairness."></svg></div>
+            <div class="meta">
+              <div class="badges"><span class="badge solid">2025</span><span class="badge">arXiv preprint</span></div>
+              <h3>MASCA: LLM based-multi agents system for credit assessment</h3>
+              <p class="gist">A layered team of LLM agents that weighs risk against reward for credit decisions — with a bias audit built in.</p>
+              <p class="authors">G. Jajoo, <b>A. Pandey</b>, P. A. Chitale, S. Agarwal</p>
+              <div class="paper-links"><a class="btn btn-sm" href="https://arxiv.org/abs/2507.22758" target="_blank" rel="noopener">arXiv</a></div>
+            </div>
+          </article>
+
+          <article class="paper" data-scene="tsfm">
+            <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: a time series with a trend and a seasonal wave enters a stack of model layers; a magnifier probes each layer, then probes fan out to concept boxes for trend, seasonality and spikes."></svg></div>
+            <div class="meta">
+              <div class="badges"><span class="badge solid">2025</span><span class="badge">arXiv preprint</span></div>
+              <h3>On the internal semantics of time-series foundation models</h3>
+              <p class="gist">Which layers of a time-series foundation model hold which concepts — and can they be read out linearly?</p>
+              <p class="authors"><b>A. Pandey</b>, A. Neog, G. Jajoo</p>
+              <div class="paper-links"><a class="btn btn-sm" href="https://arxiv.org/abs/2511.15324" target="_blank" rel="noopener">arXiv</a></div>
+            </div>
+          </article>
+
+          <article class="paper" data-scene="deduce">
+            <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: adding more premises leaves accuracy flat, but in a chain of dominoes standing for reasoning hops the later ones never fall and accuracy decays."></svg></div>
+            <div class="meta">
+              <div class="badges"><span class="badge solid">2025</span><span class="badge">arXiv preprint</span></div>
+              <h3>Deduce: Deductive consistency as a framework to evaluate LLM reasoning</h3>
+              <p class="gist">More premises barely hurt LLMs; more reasoning hops do — a decay that memorised benchmarks hide.</p>
+              <p class="authors"><b>A. Pandey</b>, K. Dubey, R. Sharma, A. Sharma</p>
+              <div class="paper-links"><a class="btn btn-sm" href="https://arxiv.org/abs/2504.07080" target="_blank" rel="noopener">arXiv</a></div>
+            </div>
+          </article>
+
+          <article class="paper" data-scene="causal">
+            <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: a three-node chain demonstrates the transitivity axiom; a small transformer is trained on it and then correctly applies the axiom to longer chains and branching graphs it has never seen."></svg></div>
+            <div class="meta">
+              <div class="badges"><span class="badge solid">2024</span><span class="badge">arXiv preprint</span></div>
+              <h3>Teaching transformers causal reasoning through axiomatic training</h3>
+              <p class="gist">A 67M-parameter transformer trained on demonstrations of a causal axiom generalises to longer chains, reversed order and branching graphs.</p>
+              <p class="authors">A. Vashishtha, A. Kumar, <b>A. Pandey</b>, A. G. Reddy, K. Ahuja, et al.</p>
+              <div class="paper-links"><a class="btn btn-sm" href="https://arxiv.org/abs/2407.07612" target="_blank" rel="noopener">arXiv</a></div>
+            </div>
+          </article>
+
+          <article class="paper" data-scene="lisr">
+            <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: a partial, noisy point cloud of a vase is turned into a set of small radial basis functions, whose linear sum gives the complete smooth surface."></svg></div>
+            <div class="meta">
+              <div class="badges"><span class="badge solid">2024</span><span class="badge">AAAI</span></div>
+              <h3>LISR: Learning linear 3D implicit surface representation using compactly supported radial basis functions</h3>
+              <p class="gist">Rebuild a surface from a partial, noisy scan as a linear sum of small, local radial basis functions.</p>
+              <p class="authors"><b>A. Pandey</b>, V. Yadav, R. Nagar, S. Chaudhury</p>
+              <div class="paper-links">
+                <a class="btn btn-sm" href="https://ojs.aaai.org/index.php/AAAI/article/view/28239" target="_blank" rel="noopener">AAAI</a>
+                <a class="btn btn-sm" href="https://arxiv.org/abs/2402.07301" target="_blank" rel="noopener">arXiv</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="paper" data-scene="heritage">
+            <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: a partial, noisy scan of a temple is restored into a complete temple, and entries are ranked on a podium with a trophy."></svg></div>
+            <div class="meta">
+              <div class="badges"><span class="badge solid">2023</span><span class="badge">NCVPRIPG</span></div>
+              <h3>A challenge on 3D reconstruction and restoration of Indian heritage from partial and noisy scans</h3>
+              <p class="gist">A challenge to rebuild whole heritage objects from scans that are partial and noisy.</p>
+              <p class="authors"><b>A. Pandey</b>, V. Yadav, A. Karthikeyan, D. Solanki, R. Nagar</p>
+            </div>
+          </article>
+
+          <article class="paper" data-scene="edu">
+            <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: a lecture on a chalkboard and a video game both lead a student to a lightbulb moment."></svg></div>
+            <div class="meta">
+              <div class="badges"><span class="badge solid">2022</span><span class="badge">ICIET</span></div>
+              <h3>Game-based learning for engineering education: Supplementing basic electronics instruction with educational games</h3>
+              <p class="gist">Educational games used alongside lectures to teach basic electronics.</p>
+              <p class="authors">K. Sanodariya, M. Shekhar, <b>A. Pandey</b>, A. Raj, A. Gupta, P. Suryavanshi, et al.</p>
+            </div>
+          </article>
+
+          <article class="paper" data-scene="circuit">
+            <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: on a game screen, a player drags a battery, a resistor and a bulb into a circuit; current flows and the bulb lights up."></svg></div>
+            <div class="meta">
+              <div class="badges"><span class="badge solid">2022</span><span class="badge">ICTE</span></div>
+              <h3>Game-based learning for basic electronics</h3>
+              <p class="gist">A game where you build circuits to see how they work.</p>
+              <p class="authors">K. Sanodariya, M. Shekhar, <b>A. Pandey</b>, A. Raj, A. Gupta, P. Suryavanshi</p>
+            </div>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- ============================ also built ============================ -->
+      <section id="also" aria-labelledby="also-h">
+        <div class="section-head">
+          <span class="h2-wrap"><h2 id="also-h">Also built</h2><svg class="sk doodle" data-doodle="scribble" viewBox="0 0 240 14" aria-hidden="true"></svg></span>
+        </div>
+        <div class="also">
+          <a href="https://github.com/Atharvap14/Krishimitra" target="_blank" rel="noopener"><strong>Krishimitra</strong><span>IoT-based precision farming, built for the Silicon Labs Social Entrepreneurship Challenge.</span></a>
+          <a href="https://github.com/Atharvap14/SecondaryVision" target="_blank" rel="noopener"><strong>SecondaryVision</strong><span>A sensory-substitution device to assist visually impaired people.</span></a>
+          <a href="https://github.com/Atharvap14/InteractiveCircuitGame" target="_blank" rel="noopener"><strong>InteractiveCircuitGame</strong><span>An interactive circuit game, in C#.</span></a>
+          <a href="https://github.com/Atharvap14/Histopathologic-cancer-detection" target="_blank" rel="noopener"><strong>Histopathologic cancer detection</strong><span>Exploratory analysis and modelling of cancer in pathology images.</span></a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer id="contact">
+    <div class="container">
+      <div>
+        <p class="sign">Atharva Pandey</p>
+        <p>© <span id="year">2026</span> · drawn in code</p>
+      </div>
+      <div class="foot-links">
+        <a class="btn btn-sm" href="https://scholar.google.com/citations?user=NfsKI5kAAAAJ&amp;hl=en" target="_blank" rel="noopener">Google Scholar</a>
+        <a class="btn btn-sm" href="https://github.com/Atharvap14" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn btn-sm" href="https://www.linkedin.com/in/atpan/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/sketch.js"></script>
+  <script src="js/glyphs.js"></script>
+  <script src="js/scenes.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

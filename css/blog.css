@@ -1,5 +1,5 @@
 /* ---------- blog post pages ---------- */
-.post { width: min(760px, 100% - 40px); margin: 0 auto; padding: 44px 0 20px; }
+.post { width: min(760px, 100% - clamp(48px, 12vw, 176px)); margin: 0 auto; padding: 44px 0 20px; }
 .crumb { margin-bottom: 26px; }
 .crumb a { text-decoration: none; color: var(--muted-foreground); font-size: 0.92rem; font-weight: 500; }
 .crumb a:hover { color: var(--foreground); }

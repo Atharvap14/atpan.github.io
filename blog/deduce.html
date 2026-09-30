@@ -81,7 +81,7 @@
     <p>Give the model the question plus a prefix of k reference steps, let it generate, and check step k + l. Vary k and you study premise understanding. Vary l and you study deductive inference. One problem now yields many evaluation instances instead of one final answer.</p>
 
     <figure class="paperfig">
-      <img src="../assets/blog/deduce/fig1-windows.jpg" alt="Figure 1 of the paper: standard evaluation on the left, and on the right the DeduCE windows for prefix 1, 2 and 3 with the DC(k,l) values" width="1444" height="531" loading="lazy">
+      <img src="../assets/blog/deduce/fig1-windows.jpg" alt="Figure 1 of the paper: standard evaluation on the left, and on the right the DeduCE windows for prefix 1, 2 and 3 with the DC(k,l) values" width="1445" height="560" loading="lazy">
       <figcaption><b>From the paper, Figure 1.</b> Standard accuracy-based evaluation checks only the final answer. DeduCE breaks the same solution into windows of (prefix, hop). The slip on step 3 (326 instead of 320) appears as DC(0,3) = 0 and DC(1,2) = 0, while the final answer stays correct.</figcaption>
     </figure>
 

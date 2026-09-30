@@ -4,24 +4,6 @@
   var root = document.documentElement;
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ---------- theme ---------- */
-  var toggle = document.querySelector('.theme-toggle');
-  if (toggle) {
-    toggle.addEventListener('click', function () {
-      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', next);
-      var meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', next === 'dark' ? '#121211' : '#f3eee2');
-      try { localStorage.setItem('theme', next); } catch (e) { /* storage unavailable */ }
-    });
-    if (root.getAttribute('data-theme') === 'dark') {
-      var m = document.querySelector('meta[name="theme-color"]');
-      if (m) m.setAttribute('content', '#121211');
-    }
-  }
-  var yr = document.getElementById('year');
-  if (yr) yr.textContent = new Date().getFullYear();
-
   /* ---------- helpers ---------- */
   function whenVisible(el, cb, threshold) {
     if (!('IntersectionObserver' in window)) { cb(true); return; }
@@ -108,7 +90,18 @@
     (window.sketchPlayers = window.sketchPlayers || {})[name] = player;
   }
 
+  function thumbs() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-thumb]'), function (svg) {
+      var name = svg.getAttribute('data-thumb'), scene = window.SCENES[name];
+      if (!scene) return;
+      var p = new window.SketchPlayer(svg, scene, { seed: hash(name) });
+      p.reduced = true; // static, finished frame
+      p.build();
+    });
+  }
+
   function boot() {
+    thumbs();
     var papers = document.querySelectorAll('.paper[data-scene]');
     Array.prototype.forEach.call(papers, mountPaper);
 

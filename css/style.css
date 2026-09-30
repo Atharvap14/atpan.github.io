@@ -264,3 +264,46 @@ svg.sk text { user-select: none; -webkit-user-select: none; }
   html { scroll-behavior: auto; }
   * { transition: none !important; }
 }
+
+/* ---------- about / news / education / blog cards ---------- */
+.about-grid { display: grid; grid-template-columns: minmax(0, 0.55fr) minmax(0, 1.45fr); gap: 48px; align-items: start; }
+.about-grid .aside { font-family: var(--font-hand); font-weight: 600; font-size: 1.7rem; line-height: 1.15; color: var(--muted-foreground); transform: rotate(-1.5deg); padding-top: 8px; }
+.prose p { margin: 0 0 1.05em; font-size: 1.06rem; line-height: 1.75; color: color-mix(in srgb, var(--foreground) 90%, var(--background)); max-width: 42em; }
+.prose p:last-child { margin-bottom: 0; }
+.prose a { text-decoration: underline; text-decoration-color: var(--sk-gray); text-underline-offset: 3px; }
+.prose a:hover { text-decoration-color: var(--foreground); }
+
+.news { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
+.news li { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 18px; padding: 14px 0; border-bottom: 1px dashed color-mix(in srgb, var(--border) 80%, transparent); }
+.news .when { font-family: var(--font-hand); font-weight: 600; font-size: 1.35rem; line-height: 1.2; color: var(--muted-foreground); }
+.news .what { font-size: 1rem; line-height: 1.55; }
+.news .what a { text-decoration: underline; text-decoration-color: var(--sk-gray); text-underline-offset: 3px; }
+.news-more { margin-top: 14px; }
+.news-more summary { cursor: pointer; display: inline-flex; list-style: none; }
+.news-more summary::-webkit-details-marker { display: none; }
+.news-more[open] summary { display: none; }
+.news-more .news { border-top: 0; margin-top: -1px; }
+
+.edu { display: grid; gap: 14px; }
+.edu-item { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 18px; padding: 18px 20px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.edu-item .when { font-family: var(--font-hand); font-weight: 600; font-size: 1.35rem; color: var(--muted-foreground); line-height: 1.2; }
+.edu-item h3 { font-size: 1.1rem; letter-spacing: -0.01em; }
+.edu-item p { color: var(--muted-foreground); font-size: 0.95rem; margin-top: 2px; }
+
+.blogs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+.blog-card { display: flex; flex-direction: column; text-decoration: none; background: var(--card); border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); box-shadow: var(--shadow); overflow: hidden; transition: transform 0.15s, border-color 0.15s; }
+.blog-card:hover { transform: translateY(-3px) rotate(-0.3deg); border-color: var(--sk-ink); }
+.blog-card .thumb { background: var(--sk-bg); border-bottom: 1px solid var(--border); }
+.blog-card .thumb svg { display: block; width: 100%; height: auto; aspect-ratio: 800 / 520; }
+.blog-card .body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.blog-card h3 { font-size: 1.12rem; line-height: 1.3; letter-spacing: -0.01em; }
+.blog-card p { color: var(--muted-foreground); font-size: 0.93rem; line-height: 1.5; }
+.blog-card .badges { margin-top: auto; }
+
+@media (max-width: 900px) {
+  .about-grid { grid-template-columns: 1fr; gap: 14px; }
+  .about-grid .aside { transform: none; font-size: 1.5rem; }
+}
+@media (max-width: 520px) {
+  .news li, .edu-item { grid-template-columns: 1fr; gap: 2px; }
+}

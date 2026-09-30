@@ -15,17 +15,23 @@ python3 -m http.server 8000   # then open http://localhost:8000
 
 | Path | What |
 | --- | --- |
-| `index.html` | All page copy: hero, the ten paper cards, footer |
+| `index.html` | Home page copy: hero, About, News, Experience, Education, Latest blogs, the ten paper cards |
+| `experience.html` | Experience, talks (with video) and competitions |
+| `blog/lisr.html`, `blog/deduce.html` | Interactive explainers (3D figures for LISR) |
 | `css/style.css` | Design tokens (shadcn-style names) for the beige theme and the dark "chalkboard" theme |
 | `js/sketch.js` | Tiny hand-drawn animation engine (wobbly strokes, pen-draw timeline, play/pause/scrub) |
 | `js/glyphs.js` | Reusable doodles: person, robot, card, bulb, battery, gauge, magnifier, … |
 | `js/scenes.js` | One scene per paper (`SCENES.<name>`), plus the small page doodles |
-| `js/main.js` | Wires cards to players, theme toggle, reduced-motion handling |
-| `assets/` | Portrait and self-hosted fonts (Roboto + Caveat) |
+| `js/main.js` | Wires cards to players, blog thumbnails, reduced-motion handling |
+| `js/theme.js` | Light / dark toggle |
+| `js/viz.js`, `js/viz3d.js` | Helpers and a tiny drag-to-rotate 3D canvas for the blog figures |
+| `js/blog-lisr.js`, `js/blog-deduce.js` | The interactive figures, computed live |
+| `assets/` | Portrait, self-hosted fonts (Roboto + Caveat), figures from the LISR paper |
 
 ## Editing
 
 - **Text / links / authors** — edit the `<article class="paper">` blocks in `index.html`.
+- **News, experience, education** — plain `<li>` / `<div class="edu-item">` blocks in `index.html` and `experience.html`.
 - **Add a paper** — copy an `<article>`, give it a new `data-scene="name"`, and add
   `SCENES.name = function (sk) { … }` in `js/scenes.js`.
 - **Colours** — the `--background`, `--card`, `--sk-*` variables at the top of `css/style.css`.

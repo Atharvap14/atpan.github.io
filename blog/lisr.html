@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Why LISR works: local pieces, full rank — Atharva Pandey</title>
+  <meta name="description" content="An interactive 3D explainer of LISR (AAAI 2024): why gradient descent gets stuck in a subspace, and how Voronoi cells and a query-selection rule make the problem full rank and well conditioned.">
+  <meta name="theme-color" content="#f3eee2">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231b1a17'/%3E%3Cpath d='M17 47 L32 15 L47 47 M23 37 H41' stroke='%23f3eee2' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <script>try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <link rel="preload" href="../assets/fonts/roboto.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/caveat.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/blog.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="container">
+      <a class="brand" href="../index.html">Atharva Pandey</a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="../index.html#blog">Blog</a>
+        <a href="../index.html#work">Work</a>
+        <button class="btn btn-icon theme-toggle" type="button" aria-label="Toggle light / dark">
+          <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="post">
+    <p class="crumb"><a href="../index.html#blog">← All writing</a></p>
+    <p class="kicker">explainer · AAAI 2024</p>
+    <h1>Why LISR works: local pieces, full rank</h1>
+    <p class="dek">A 3D scan is a cloud of noisy, partial points. LISR turns it into a surface as a <em class="hl">linear</em> sum of compact pieces — and the reason it trains well is a small piece of linear algebra you can rotate in 3D below.</p>
+    <p class="byline">Atharva Pandey · Sept 2026 · Based on <a href="https://ojs.aaai.org/index.php/AAAI/article/view/28239" target="_blank" rel="noopener">LISR (AAAI 2024)</a> with V. Yadav, R. Nagar and S. Chaudhury</p>
+
+    <div class="paper solo" data-scene="lisr">
+      <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: a partial, noisy point cloud of a vase becomes a set of small bumps whose linear sum is the complete surface."></svg></div>
+    </div>
+
+    <h2>A surface as a sum of basis functions</h2>
+    <p>We describe an object by its signed distance field <span class="math">f : ℝ³ → ℝ</span>: <span class="math">f(x)</span> is how far <span class="math">x</span> is from the surface, and the surface is where <span class="math">f = 0</span>. LISR models <span class="math">f</span> as a <em class="hl">linear</em> combination of basis functions:</p>
+    <div class="eqn"><span class="math">f(x) = Σ<sub>i=1</sub><sup>n</sup> α<sub>i</sub> φ<sub>i</sub>(x)</span><small>coefficients α<sub>i</sub>, basis functions φ<sub>i</sub></small></div>
+    <p>Fitting the scan means minimising the squared error to the ground-truth SDF over a set of query points. Stack the basis functions evaluated at the queries into a matrix <span class="math">Vᵀ</span> and this is the linear system <span class="math">Vᵀα = s<sub>gt</sub></span>. All the difficulty lives in the matrix <span class="math">VVᵀ</span>.</p>
+
+    <h2>The optimiser is stuck in a subspace</h2>
+    <p>The gradient of the loss is <span class="math">2VVᵀ(α − (VVᵀ)⁻¹V s<sub>gt</sub>)</span>. Every gradient step is therefore a vector in the range of <span class="math">VVᵀ</span>, so gradient descent can only ever land in <span class="math">α₀ + range(VVᵀ)</span> &mdash; a small, local subspace around where it started. That gives the paper&rsquo;s first result:</p>
+    <div class="note"><p><strong>Theorem 1.</strong> Gradient descent reaches the optimal solution of <span class="math">Vᵀα = s<sub>gt</sub></span> if and only if <span class="math">VVᵀ</span> is full rank.</p></div>
+
+    <div class="fig" id="fig-stuck"></div>
+
+    <p>The paper checks this on real bases. With global-support bases the matrix loses rank; with the proposed compactly supported basis it does not:</p>
+    <table class="rank">
+      <thead><tr><th>Basis function</th><th>Rank of <i>VVᵀ</i></th><th>Maximum rank</th></tr></thead>
+      <tbody>
+        <tr><td>Tri-harmonic</td><td>954</td><td>1000</td></tr>
+        <tr><td>Mono-harmonic</td><td>997</td><td>1000</td></tr>
+        <tr><td>HRBF</td><td>13</td><td>3000</td></tr>
+        <tr class="win"><td>CSRBF (proposed)</td><td>3000</td><td>3000</td></tr>
+      </tbody>
+    </table>
+    <p class="cap">Table 1 from the paper.</p>
+
+    <figure class="paperfig">
+      <img src="../assets/blog/lisr/fig1-sensitivity.jpg" alt="Four renderings of an aeroplane whose shape degrades as noise of increasing size is added to the coefficients" width="653" height="188" loading="lazy">
+      <figcaption><b>From the paper, Figure 1.</b> Perturbing the coefficients of a global-support (HRBF) basis with noise of size &eta; = 10<sup>&minus;6</sup>, 10<sup>&minus;5</sup>, 10<sup>&minus;4</sup>, 10<sup>&minus;2</sup>: the shape is far too sensitive &mdash; already at 10<sup>&minus;5</sup> one wing is clipped.</figcaption>
+    </figure>
+
+    <h2>Cut space into Voronoi cells</h2>
+    <p>The fix is to make each basis <em class="hl">local</em>. Give every kernel point <span class="math">p<sub>i</sub></span> its own 3D Voronoi cell, and switch its basis on only inside that cell:</p>
+    <div class="eqn"><span class="math">f(x) = Σ<sub>i=1</sub><sup>q</sup> r<sub>i</sub>(x) · β<sub>i</sub>ᵀ ∇‖x − p<sub>i</sub>‖³</span><small>r<sub>i</sub>(x) = 1 inside the cell of p<sub>i</sub>, 0 outside · three coefficients β<sub>i</sub> per kernel point</small></div>
+    <p>Now pick at least three linearly independent queries in every cell. Group the queries by cell and <span class="math">Vᵀ</span> becomes <em class="hl">block-diagonal</em>, with one 3×3 block per cell &mdash; and the rank of a block-diagonal matrix is the sum of its blocks&rsquo; ranks.</p>
+    <div class="note"><p><strong>Theorem 2.</strong> With the compactly supported (Voronoi) basis and this query selection, <span class="math">VVᵀ</span> is full rank.</p></div>
+
+    <div class="fig" id="fig-voronoi"></div>
+
+    <h2>Bonus: choose the queries so it becomes cI</h2>
+    <p>Full rank guarantees convergence; conditioning decides how fast. The paper&rsquo;s <em>faster-convergence query selection</em> (Algorithm 1) places the three queries of each cell at <span class="math">p<sub>i</sub> + εx̂</span>, <span class="math">p<sub>i</sub> + εŷ</span> and <span class="math">p<sub>i</sub> + εẑ</span>, with the same small <span class="math">ε</span> everywhere. Each 3×3 block then becomes a multiple of the identity, so</p>
+    <div class="eqn"><span class="math">VVᵀ = c · I</span><small>all directions are scaled equally &rarr; the gradient always points at the optimum</small></div>
+    <p>and gradient descent trains much faster.</p>
+
+    <div class="fig" id="fig-select"></div>
+
+    <h2>Learning it from a scan</h2>
+    <p>LISR uses two networks. A <em>basis prediction network</em> (a 3D auto-encoder trained with a Chamfer-L1 loss) predicts the kernel points from the partial scan; for a complete shape the input points can serve as the kernel points directly. A <em>coefficient prediction network</em> then predicts the coefficients for each kernel point, supervised by the ground-truth SDF.</p>
+    <figure class="paperfig">
+      <img src="../assets/blog/lisr/fig2-framework.jpg" alt="Architecture diagram: a basis prediction network and a coefficient prediction network" width="1354" height="667" loading="lazy">
+      <figcaption><b>From the paper, Figure 2.</b> The framework: a Basis Prediction Network predicts kernel points; a Coefficient Prediction Network predicts the coefficients for each basis. Together they define the linear implicit shape.</figcaption>
+    </figure>
+
+    <h2>What it buys</h2>
+    <p>Overfitting a single shape with only 1000 kernel points, the compact basis with Algorithm 1 captures the global shape, while the global-support bases cannot capture any aspect of it:</p>
+    <figure class="paperfig">
+      <img src="../assets/blog/lisr/fig3-single-shape.jpg" alt="A point cloud and four reconstructions; only the last, LISR, resembles the object" width="1416" height="299" loading="lazy">
+      <figcaption><b>From the paper, Figure 3.</b> (a) the point cloud; (b) tri-harmonic, (c) mono-harmonic and (d) Hermite-RBF bases with uniform query selection; (e) LISR with Algorithm 1.</figcaption>
+    </figure>
+    <p>Across five ShapeNet classes (chair, aeroplane, lamp, sofa, table) the paper reports a better Chamfer distance and a comparable F-score than the state of the art, and shows the representation is useful for 3D shape completion. Because the surface is continuous, it can be evaluated at any resolution and any topology.</p>
+    <figure class="paperfig narrow">
+      <img src="../assets/blog/lisr/fig4-results.jpg" alt="Three objects: input point cloud, ground-truth surface and predicted surface" width="683" height="810" loading="lazy">
+      <figcaption><b>From the paper, Figure 4.</b> Reconstruction from a point cloud: (a) input, (b) ground truth, (c) predicted.</figcaption>
+    </figure>
+
+    <div class="note"><p><strong>About Figures A–C.</strong> These are my interactive illustrations of Theorems 1&ndash;2 and Algorithm 1, computed live in your browser on a small toy problem (10 kernel points in a unit cube, using the paper&rsquo;s basis &nabla;&#8214;x&minus;p&#8214;&sup3;). The table and the four figures marked &ldquo;from the paper&rdquo; are reproduced from the paper.</p></div>
+
+    <p class="post-end">Read the paper: <a href="https://ojs.aaai.org/index.php/AAAI/article/view/28239" target="_blank" rel="noopener">AAAI</a> · <a href="https://arxiv.org/abs/2402.07301" target="_blank" rel="noopener">arXiv</a> · <a href="https://github.com/Atharvap14/LISR" target="_blank" rel="noopener">code</a></p>
+  </main>
+
+  <footer id="contact">
+    <div class="container">
+      <div><p class="sign">Atharva Pandey</p><p>© <span id="year">2026</span> · drawn in code</p></div>
+      <div class="foot-links">
+        <a class="btn btn-sm" href="../index.html">Home</a>
+        <a class="btn btn-sm" href="https://scholar.google.com/citations?user=NfsKI5kAAAAJ&amp;hl=en" target="_blank" rel="noopener">Google Scholar</a>
+        <a class="btn btn-sm" href="https://github.com/Atharvap14" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn btn-sm" href="https://www.linkedin.com/in/atpan/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/theme.js"></script>
+  <script src="../js/sketch.js"></script>
+  <script src="../js/glyphs.js"></script>
+  <script src="../js/scenes.js"></script>
+  <script src="../js/main.js"></script>
+  <script src="../js/viz.js"></script>
+  <script src="../js/viz3d.js"></script>
+  <script src="../js/blog-lisr.js"></script>
+</body>
+</html>

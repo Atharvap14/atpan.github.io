@@ -100,3 +100,26 @@ table.rank tr.win td { font-weight: 600; background: linear-gradient(transparent
 .post hr { border: 0; height: 12px; margin: 2.2em 0 0; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='12'><path d='M4 7 Q20 1 36 7 T68 7 T100 6 T116 7' fill='none' stroke='%238a8477' stroke-width='2.2' stroke-linecap='round'/></svg>") center/120px 12px no-repeat; }
 .post code { font-style: normal; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.92em; background: var(--muted); padding: 1px 6px; border-radius: 5px; }
 .post .eqn { font-style: italic; }
+
+/* DeduCE figures */
+.wk li.mid { border-style: dashed; }
+.wk .q .dim { color: var(--muted-foreground); }
+.wk pre.code { margin: 0; font-size: 0.8rem; line-height: 1.55; padding: 10px 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+table.dcgrid { border-collapse: separate; border-spacing: 4px; width: 100%; font-size: 0.85rem; }
+table.dcgrid th { font-weight: 500; font-size: 0.78rem; color: var(--muted-foreground); text-align: left; white-space: nowrap; padding: 0 4px; }
+table.dcgrid td { text-align: center; padding: 0; color: var(--muted-foreground); }
+table.dcgrid td.na { background: repeating-linear-gradient(135deg, transparent 0 5px, var(--border) 5px 6px); border-radius: 8px; }
+table.dcgrid tr.avgrow td, table.dcgrid td.avg { font-size: 0.8rem; }
+table.dcgrid button.cell { width: 100%; min-width: 34px; height: 36px; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); font: 600 0.95rem var(--font-sans); cursor: pointer; }
+table.dcgrid button.cell.v0 { background: var(--muted); color: var(--muted-foreground); text-decoration: line-through; }
+table.dcgrid button.cell.diag { border-color: var(--sk-gray); border-style: dashed; }
+table.dcgrid button.cell.on { border: 2px solid var(--sk-ink); background: var(--sk-hl); color: var(--sk-ink); }
+.sel { font: 500 0.9rem var(--font-sans); padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--foreground); max-width: 100%; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--border); background: var(--background); color: var(--foreground); border-radius: 999px; padding: 4px 11px; font: 500 0.8rem var(--font-sans); cursor: pointer; }
+.chip[aria-pressed='false'] { opacity: 0.45; }
+.chip .sw { display: inline-block; width: 20px; height: 0; }
+.post h2 .sec { color: var(--muted-foreground); font-weight: 500; margin-right: 6px; }
+.post .tbl-wrap { overflow-x: auto; margin: 1em 0; }
+.post table.rank td.num, .post table.rank th.num { text-align: right; padding-right: 14px; font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .wk { grid-template-columns: minmax(0, 1fr); } }

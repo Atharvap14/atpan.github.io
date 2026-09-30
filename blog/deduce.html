@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Do language models reason, or just remember? | Atharva Pandey</title>
-  <meta name="description" content="An interactive explainer of DeduCE: grading the chain of thought as a proof, and why LLM accuracy decays with reasoning hops but not with premises.">
+  <meta name="description" content="A full walkthrough of the DeduCE paper: deductive consistency, the pipeline that makes novel problems, every dataset, result, error analysis and mitigation, with interactive figures built from the paper's numbers.">
   <meta name="theme-color" content="#f3eee2">
-  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png?v=3">
+  <link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png?v=3">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png?v=3">
   <script>try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <link rel="preload" href="../assets/fonts/roboto.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/caveat.woff2" as="font" type="font/woff2" crossorigin>
@@ -31,44 +32,215 @@
 
   <main class="post">
     <p class="crumb"><a href="../index.html#blog">← All writing</a></p>
-    <p class="kicker">explainer · arXiv 2025</p>
+    <p class="kicker">paper walkthrough · ICLR 2025 Workshop on Reasoning and Planning</p>
     <h1>Do language models reason, or just remember? Count the hops</h1>
-    <p class="dek">Frontier models ace Olympiad problems and still stumble on high-school maths they haven&rsquo;t seen. DeduCE measures <em>where</em> that breaks: not in reading the problem, but in chaining the steps.</p>
-    <p class="byline">Atharva Pandey · Sept 2026 · Based on <a href="https://arxiv.org/abs/2504.07080" target="_blank" rel="noopener">DeduCE (arXiv 2504.07080)</a> with K. Dubey, R. Sharma and A. Sharma</p>
+    <p class="dek">Frontier models ace Olympiad problems and still stumble on high-school maths they haven&rsquo;t seen. DeduCE grades the chain of thought instead of the final answer, and shows that models cope with long inputs far better than with long chains of inference.</p>
+    <p class="byline">Atharva Pandey · Sept 2026 · Based on <a href="https://openreview.net/pdf?id=JpeDhIHEt9" target="_blank" rel="noopener">DeduCE: Deductive Consistency as a Framework to Evaluate LLM Reasoning (OpenReview PDF)</a> with K. Dubey, R. Sharma and A. Sharma</p>
 
     <div class="paper solo" data-scene="deduce">
       <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: adding more premises leaves accuracy flat, but in a chain of dominoes standing for reasoning hops the later ones never fall and accuracy decays."></svg></div>
     </div>
 
-    <h2>The problem with final answers</h2>
-    <p>Benchmarks like GSM8K report one number: did the final answer match? That number can hide a lot. If a model has seen a problem (or near copies) in training, a right answer says little about whether it can <em>deduce</em> anything. So instead of grading the answer, DeduCE grades the reasoning.</p>
+    <div class="note"><p><strong>How to read this.</strong> This post walks through the whole paper in order: the metric, the pipeline that builds novel problems, the three datasets, every result, the error analysis, and the mitigation experiments. The four figures labelled &ldquo;From the paper&rdquo; are the paper&rsquo;s own. Figures A, B and C are interactive and use the paper&rsquo;s example and the numbers from its tables.</p></div>
 
-    <h2>A chain of thought is a proof</h2>
-    <p>Think of an ideal deductive reasoner: given a set of premises, it can derive valid conclusions over any number of hops. DeduCE compares a language model to that ideal by treating its chain of thought as a proof and checking partial traces against a reference proof built from the original problem. Two skills are measured separately:</p>
+    <h2><span class="sec">0</span>The short version</h2>
     <ul>
-      <li><strong>Understanding premises</strong>: how well does the model cope as the input gets longer and holds more premises?</li>
-      <li><strong>Inferring conclusions</strong>: how well can it chain multiple reasoning hops?</li>
+      <li><strong>Metric.</strong> <em>Deductive consistency</em> (DC) checks each step of a model&rsquo;s chain of thought against a reference proof, given a prefix of that proof, at a chosen number of hops.</li>
+      <li><strong>Two subtasks, measured separately.</strong> Vary the prefix length <em>k</em> to test how well a model understands more premises. Vary the hop count <em>l</em> to test how well it infers conclusions over a longer horizon.</li>
+      <li><strong>Novel problems.</strong> A pipeline turns a benchmark problem into a template plus code, then mutates the numbers, so answers cannot be memorised.</li>
+      <li><strong>Main result.</strong> On GSM8K and ProntoQA, DC stays flat as the prefix grows but decays as the number of hops grows. On the original GSM8K problems the decay is invisible: DC is 1 for every model.</li>
+      <li><strong>Why it fails.</strong> Errors are mostly calculation and logic errors. Reinforcement learning, supervised fine-tuning and a calculator tool reduce some errors but do not remove the decay.</li>
     </ul>
 
+    <h2><span class="sec">1</span>Why grade more than the final answer?</h2>
+    <p>Deductive reasoning has two parts: <strong>understanding</strong> a set of input premises, and <strong>inferring</strong> the conclusions that follow from them. A benchmark that reports only final accuracy mixes both together, and it also mixes in memorisation: if a model has seen a problem, or near copies of it, a right answer says little about whether it can deduce anything.</p>
+    <p>The ideal test would need an oracle that can verify any candidate conclusion from the premises, which means computing the full deductive closure. That is almost never available. DeduCE instead asks for something practical: <em>one</em> correct solution per problem, and a way to check a model&rsquo;s steps against it.</p>
+    <p>The paper places itself among three lines of work:</p>
+    <ul>
+      <li><strong>Evaluating beyond memorisation</strong> with synthetic data (DyVal) or perturbed versions of existing datasets for maths (GSM-Symbolic, DARG), analogical reasoning and deductive reasoning (RobustLR).</li>
+      <li><strong>Metrics beyond final accuracy</strong>: answer plus explanation correctness, deductive competence tests, faithfulness of chain of thought, and detecting or fixing errors in a given solution.</li>
+      <li><strong>Deductive reasoning in LLMs</strong>: LogicBench, JustLogic, syllogisms and intuitionistic proving, almost all scored by final accuracy.</li>
+    </ul>
+    <p>DeduCE aims to be one general metric for any task where reasoning can be written as steps.</p>
+
+    <h2><span class="sec">2</span>Defining deductive consistency</h2>
+    <h3>The setup</h3>
+    <p>Take a proof system with a language <em>L</em> and inference rules <em>R</em>. A problem is a set of premises <em>P</em> and a target predicate <em>t</em>. The deductive closure Th(<em>P</em>) is everything provable from <em>P</em>. The paper&rsquo;s toy example uses statements of the form X&rarr;Y with transitivity as the only rule.</p>
+    <blockquote>Premises: A&rarr;B; B&rarr;C; B&rarr;D; C&rarr;F; D&rarr;F; E&rarr;F; F&rarr;G. Target: A&rarr;G.<br>A reasoning system answers with A&rarr;D; A&rarr;E; E&rarr;G.</blockquote>
+    <h3>Step 1: per-predicate consistency</h3>
+    <p>With a complete proof system we can check each step the system writes, given the premises and its own earlier steps:</p>
+    <div class="eqn">Cons<sub>d</sub> = &Sigma;<sub>i</sub> I(X<sub>i</sub> is correctly inferred) / |A(P, t)|</div>
+    <p>In the example, A&rarr;D is fine, A&rarr;E does not follow from the premises, and E&rarr;G does. So Cons is 2 of 3, about 0.67, even though the proof reaches A&rarr;G. Final accuracy would say 1 and hide the wrong step.</p>
+    <h3>Step 2: give the model a correct prefix</h3>
+    <p>If step <em>j</em> is wrong, every later step depends on a wrong premise. So the paper adds the first <em>k</em> steps of a correct reference proof to the premises, <em>P&prime; = P &cup; R<sub>k</sub>(P, t)</em>, and lets the system complete the proof:</p>
+    <div class="eqn">Cons<sub>d</sub>(k) = &Sigma;<sub>i=k+1..N</sub> I(X&prime;<sub>i</sub>) / |A(P&prime;, t)|<small>Equation 1</small></div>
+    <p>With k = 1 the reference adds A&rarr;C and the system may still go wrong. With k = 2 it adds A&rarr;C and A&rarr;F and completes A&rarr;G correctly. As k grows we learn how well the system handles a longer list of premises.</p>
+    <h3>Step 3: fix the right-censoring problem with hops</h3>
+    <p>There is a catch. The more of the proof you hand over, the fewer inference steps are left. DC can therefore rise with k simply because the problem got easier. This is a right-censoring issue: the difficult far end of the chain is only reached by short prefixes. So the paper adds a second parameter, the number of <strong>hops</strong> <em>l</em>: the number of inference steps at which the system is checked.</p>
+    <div class="eqn">DedCons<sub>d<sub>j</sub></sub>(k, l) = I(X&prime;<sub>k+l, j</sub>) &nbsp;&nbsp; DedCons(k, l) = &Sigma;<sub>d<sub>j</sub> &isin; D</sub> I(X&prime;<sub>k+l, j</sub>) / M<small>Equations 2 and 3, M is the number of problems</small></div>
+    <p>Give the model the question plus a prefix of k reference steps, let it generate, and check step k + l. Vary k and you study premise understanding. Vary l and you study deductive inference. One problem now yields many evaluation instances instead of one final answer.</p>
+
     <figure class="paperfig">
-      <img src="../assets/papers/deduce.jpg" alt="Figure 1 of the paper: the pipeline for deductive consistency evaluation" width="1534" height="563" loading="lazy">
-      <figcaption><b>From the paper, Figure 1.</b> The pipeline: take a benchmark problem with a valid solution, templatise it into code, mutate the code to get novel problems, and evaluate the subject model on the resulting deductive consistency and coverage.</figcaption>
+      <img src="../assets/blog/deduce/fig1-windows.jpg" alt="Figure 1 of the paper: standard evaluation on the left, and on the right the DeduCE windows for prefix 1, 2 and 3 with the DC(k,l) values" width="1444" height="531" loading="lazy">
+      <figcaption><b>From the paper, Figure 1.</b> Standard accuracy-based evaluation checks only the final answer. DeduCE breaks the same solution into windows of (prefix, hop). The slip on step 3 (326 instead of 320) appears as DC(0,3) = 0 and DC(1,2) = 0, while the final answer stays correct.</figcaption>
     </figure>
 
-    <div class="fig" id="fig-walk"></div>
+    <div class="fig" id="fig-window"></div>
 
-    <p>Because existing benchmarks may be memorised, the pipeline evaluates models on <em>novel, perturbed versions</em> of benchmark problems: templatise a problem, then vary how many premises it has and how many hops its solution needs.</p>
+    <h3>Base, decay and the ideal reasoner</h3>
+    <p>To summarise a whole curve the paper defines two numbers. <strong>Base</strong> is the DC at the first hop. <strong>Decay</strong> is the negative slope of the best-fit line of DC against hops, with hops rescaled to run from 0 to 1 by dividing by the maximum number of hops &ell;<sub>max</sub>:</p>
+    <div class="eqn">Decay = &minus; Cov( E<sub>k</sub>[DedCons(k, &ell;)] , &ell;/&ell;<sub>max</sub> ) / Var( &ell;/&ell;<sub>max</sub> )<small>Equations 4 to 6, the same definition applies with respect to the prefix k</small></div>
+    <p>An ideal reasoner has a base close to 1 and zero decay, independent of both the number of premises k and the number of hops l. Decay is a per-model slope, so a decay of 0.2 means a model loses about 0.2 of its consistency over the full range of hops.</p>
 
-    <h2>What they found</h2>
-    <p>On novel grade-school maths problems (GSM8K), models are fairly robust to more input premises but lose accuracy as the number of reasoning hops grows: deductive consistency falls by roughly 15&ndash;30% from one hop to five. The failures are not mainly due to a shift in language style or to early errors propagating; they come from a more basic limit in chaining hops. On the original benchmark the decay is invisible, because memorisation masks it. On a synthetic dataset with more solution steps, asking the model to deduce step by step did not remove the decay.</p>
+    <h3>When only one reference proof exists</h3>
+    <p>Even a single correct proof is enough, but there is a price. With only a reference solution S(P, t) we can verify only the predicates that appear in it. So the metric asks whether the reference&rsquo;s step k + l shows up in the model&rsquo;s proof:</p>
+    <div class="eqn">DedCons<sub>single</sub>(k, l) = &Sigma;<sub>d<sub>j</sub></sub> I( Z<sub>k+l, j</sub> &isin; A(P&prime;<sub>j</sub>, t<sub>j</sub>) ) / M<small>Equation 7</small></div>
+    <p>This can underestimate consistency. In the toy example the reference proof is A&rarr;C; A&rarr;F; A&rarr;G. A valid alternative, A&rarr;D; A&rarr;F; A&rarr;G, scores 0 at (k, l) = (0, 1) because A&rarr;C is missing. The paper therefore reports <strong>coverage</strong>, the share of the reference solution&rsquo;s variables that the model&rsquo;s solution also infers:</p>
+    <div class="eqn">Coverage = &Sigma;<sub>d<sub>j</sub></sub> |V<sub>S(P<sub>j</sub>,t)</sub> &cap; V<sub>A(P<sub>j</sub>,t)</sub>| / &Sigma;<sub>d<sub>j</sub></sub> |V<sub>S(P<sub>j</sub>,t)</sub>|<small>Equation 8</small></div>
+    <p>DC results are only interpretable when coverage is high. The paper&rsquo;s coverage table shows it is high across premise styles, which means the models&rsquo; solutions to the novel problems infer almost the same variables as the reference.</p>
 
-    <div class="fig" id="fig-decay"></div>
+    <h2><span class="sec">3</span>Building the evaluation: a pipeline for novel problems</h2>
+    <p>Two practical requirements: a reference solution that can verify intermediate steps, and problems the model has not memorised.</p>
+    <h3>When a correct solution is known</h3>
+    <p>If a dataset comes from source code, that code is the reference. For each prefix k, show the SubjectLM the question and the prefix, let it write a chain of thought, and use a <em>Variable Extraction LM</em> (the parser) to read predicate values out of the natural language. Check each value against the computation graph of <code>tCode</code> at every hop, then average over the dataset to get DedCons(k, l).</p>
+    <h3>When the dataset is real-world and needs novel problem generation</h3>
+    <p>For sources like GSM8K there is no generating code, and memorisation is a real worry. The paper builds novel versions of each problem and gets a reference solution from an auxiliary model on the original one. It deliberately exploits memorisation here: a model that has seen the problem is more likely to write the correct reference.</p>
+    <ol>
+      <li><strong>Generate, then verify.</strong> An expert LM writes the solution in two equivalent forms: a templatised chain of thought (<code>tCoT</code>) and executable code (<code>tCode</code>). The chain of thought comes first so the reasoning is laid out clearly.</li>
+      <li><strong>Check consistency.</strong> For the factual inputs, <code>tCode</code> and <code>tCoT</code> must yield identical intermediate values at each step. Only then is the code accepted as a symbolic encoding of the problem and its correct solution.</li>
+      <li><strong>Mutate.</strong> Sample new seed premises (random integers under 100, no large numbers or floats), run <code>tCode</code> to get the intermediate values, and reinsert them into the templated question <code>tQ</code> and <code>tCoT</code>. The result is a new question Q&prime; with a fresh, correct ground-truth chain of thought.</li>
+    </ol>
+    <p>Other perturbations, such as renaming variables or adding irrelevant facts as in GSM-Symbolic, would plug into the same code. Three auxiliary models do the transformations: a <em>Templatization LM</em> for <code>tQ</code> and <code>tCoT</code>, a <em>Code Generation LM</em> for <code>tCode</code>, and the <em>Variable Extractor</em> for reading model outputs.</p>
 
-    <div class="note"><p><strong>About these figures.</strong> Figure 1 uses the example from the paper&rsquo;s own Figure 1 with my extra hops added; Figure 2 is a schematic of the paper&rsquo;s findings rather than its plots.</p></div>
+    <figure class="paperfig">
+      <img src="../assets/blog/deduce/fig4-pipeline.jpg" alt="Figure 4 of the paper: the GSM8K pipeline from factual dataset to template, code, mutation and deductive consistency computation" width="1447" height="529" loading="lazy">
+      <figcaption><b>From the paper, Figure 4 (Appendix A.1).</b> The GSM8K pipeline: the factual problem is templatised, a code generator writes tCode, the code is mutated with new numbers, the subject LLM answers the mutated question given a prefix of premises, and DC and coverage are computed from its steps.</figcaption>
+    </figure>
 
-    <h2>Why it matters</h2>
-    <p>If you evaluate a model only on published benchmarks, you may be measuring recall. Perturbing problems, and counting hops, tells you how much reasoning is actually left when the answer can&rsquo;t be looked up.</p>
-    <p class="post-end">Read the paper: <a href="https://arxiv.org/abs/2504.07080" target="_blank" rel="noopener">arXiv</a></p>
+    <div class="fig" id="fig-mutate"></div>
+
+    <h2><span class="sec">4</span>The datasets</h2>
+    <ul>
+      <li><strong>GSM8K.</strong> A random subset of 1,000 problems. Responses from the models under evaluation are filtered through the pipeline, and the problems that survive for every model form the final set: <strong>165 problem instances</strong>, each with <strong>10 counterfactual samples</strong>.</li>
+      <li><strong>SynDeduct.</strong> The authors&rsquo; own synthetic generator, built for long reasoning chains with fine-grained control. A question can be steered from a starting premise A to an intermediate node I (the prefix k) and then from I to the target B (the hop l), so that Distance(A, B) = k + l. It samples DAGs of constants, variables and arithmetic operators, extracts paths as programmatic reasoning traces, and verbalises them with templates. Because the computation graph is known, no code generation or templated chain of thought is needed. Questions are binned by number of hops, mixing different prefix lengths inside each bin. Operators are limited to addition and subtraction to avoid inflating calculation errors.</li>
+      <li><strong>ProntoQA.</strong> Synthetic logical reasoning with Modus Ponens in natural language. The paper generates up to <strong>5 hops</strong> with <strong>100 questions per hop</strong> for each of three ontologies (true, false, fictional). Each statement in a chain of thought is converted to first-order logic and checked with the Z3 solver.</li>
+    </ul>
+
+    <h2><span class="sec">5</span>Experimental setup</h2>
+    <ul>
+      <li><strong>Pipeline models.</strong> Llama-3-70B-Instruct acts as templatiser, code generator and variable extractor. About 30% of generations fail to produce valid JSON and are filtered out, with further sanity checks on top. Llama-3.1-8B-Instruct is the parser. Z3 verifies ProntoQA predicates. GPT-4o is used only for error analysis.</li>
+      <li><strong>Models evaluated.</strong> Phi-3.5-mini, Phi-4, Qwen2.5-Math-7B, Qwen2.5-Math-72B, Llama-3.3-70B, Llama-3-8B, and R1-distilled variants. All are instruction-tuned.</li>
+      <li><strong>Compute.</strong> One node with four Nvidia A100 80GB GPUs.</li>
+    </ul>
+
+    <h2><span class="sec">6</span>Results on GSM8K: premises versus inference</h2>
+    <h3>Memorisation hides everything</h3>
+    <p>On the original benchmark, DC is a constant 1 across hops for every model. On the perturbed problems it is significantly lower. That gap is the memorisation effect, and the decay over hops, which the original benchmark masks, is the paper&rsquo;s key result.</p>
+    <figure class="paperfig">
+      <img src="../assets/blog/deduce/fig2-hops.jpg" alt="Figure 2 of the paper: deductive consistency against hops for GSM8K-Mutated on the left and ProntoQA on the right" width="1406" height="574" loading="lazy">
+      <figcaption><b>From the paper, Figure 2.</b> Left: deductive consistency against reasoning hops across models on GSM8K-Mutated. Right: the same on ProntoQA. An ideal model would be a flat line at 1.</figcaption>
+    </figure>
+    <h3>Base and decay by model</h3>
+    <p>Larger models (Qwen2.5-Math-72B, Llama-3.3-70B), models trained on synthetic data (Phi-4) and maths-specific models reach higher base values, but even these decay as hops increase. Small models such as Llama-3-8B and Phi-3.5-mini have lower bases, and Llama-3-8B has the steepest decay. Concretely, from hop 1 to hop 5: Llama-3.3-70B goes from 0.890 to 0.708, Phi-4 from 0.891 to 0.761, Qwen2.5-Math-72B from 0.937 to 0.832 and Llama-3-8B from 0.763 to 0.499.</p>
+    <h3>Premises hardly matter</h3>
+    <p>Deductive consistency changes little as the prefix grows (Table 12 in the paper, reproduced in Figure C). Llama-3.3-70B, for example, sits between 0.79 and 0.80 for every prefix from 1 to 5. So the evidence points to a hypothesis with two halves: consistency depends on hops, but not on premises. The paper flags one caveat: GSM8K problems are simple, so the longest prefix it could test is 7.</p>
+    <h3>Two hypotheses about why accuracy drops on novel problems</h3>
+    <p>Earlier work reports lower accuracy on novel maths problems. DC lets the paper test two explanations.</p>
+    <ul>
+      <li><strong>H1: novel problems cause early errors that propagate.</strong> DC at the first hop remains high, so models do get the first step right. Novel problems do not cause early errors. They do cause frequent calculation slips, and those slips propagate, so H1 holds only in part.</li>
+      <li><strong>H2: novel problems change the style of the chain of thought, which causes faulty reasoning.</strong> To test it, the paper adds premises in four styles: the original wording from the model&rsquo;s answer to the benchmark problem, and three paraphrases. <em>Vanilla</em> rewords conventionally. <em>Axiomatic</em> restates the fact as an axiom, such as &ldquo;ADD(60, 12) yields 72&rdquo;. <em>Reverse</em> puts the effect before its cause: &ldquo;Yasna has to read the 72 pages, which is the sum of 60 and 12&rdquo;. Base values dip slightly for the paraphrases. The differences are statistically significant at 0.05 in a t-test, but Cohen&rsquo;s d is below 0.1, so the effect is tiny. The paper concludes there is only weak evidence for H2.</li>
+    </ul>
+
+    <h2><span class="sec">7</span>Results on SynDeduct: a longer horizon</h2>
+    <p>GSM8K stops at five hops, so SynDeduct is designed for chains up to twelve hops long. The trend agrees with GSM8K: DC falls as hops increase. Larger models are more resilient, while smaller models such as Llama-3-8B collapse. Qwen2.5-Math-7B starts at 0.21 at hop 1 and reaches 0 at hop 12. Llama-3.3-70B goes from 0.85 to 0.61, and DeepSeek-R1-Distill-Llama-70B from 0.74 to 0.33.</p>
+    <figure class="paperfig narrow">
+      <img src="../assets/blog/deduce/fig3-synded.jpg" alt="Figure 3 of the paper: deductive consistency against hops 1 to 12 on SynDeduct for eight models" width="739" height="456" loading="lazy">
+      <figcaption><b>From the paper, Figure 3.</b> Deductive consistency with standard error against hops 1 to 12 on SynDeduct. Each hop bin has roughly the same spread of prefixes.</figcaption>
+    </figure>
+    <p>On SynDeduct the paper also notes that accuracy falls as the prefix segments grow for some models. It offers the larger token budget as a possible factor, then argues against context length as the cause: the task never exceeds about 10k tokens, and every model except Llama-3-8B has a context window well beyond that.</p>
+
+    <h2><span class="sec">8</span>Results on ProntoQA</h2>
+    <p>ProntoQA is built for multi-hop factual reasoning, and Figure 2 (right) shows a consistent decay with hops. The absolute values are high, mostly between 0.93 and 1.0. Phi-4, the 70B models and Qwen2.5-Math-72B stay close to 1, while several 7B models slip to roughly 0.94 to 0.95 by hop 5. Phi-4 also shows negligible decay with the prefix, which the paper suspects is because it is trained on similar synthetic data. The overall pattern matches GSM8K and SynDeduct.</p>
+
+    <h2><span class="sec">9</span>Where do the errors come from?</h2>
+    <p>To label errors the paper groups GSM8K problems by how many of their mutated variants a model gets right (from all right to all wrong) and uses GPT-4o to categorise the mistakes. It uses three categories on GSM8K:</p>
+    <ul>
+      <li><strong>Calculation.</strong> Arithmetic and rounding slips, plus errors carried forward from an earlier slip.</li>
+      <li><strong>Logic.</strong> Wrongly applying a rule, operator or formula.</li>
+      <li><strong>Understanding.</strong> A wrong assumption about, or contradiction of, a stated fact. This shows up when a problem is far from the real world, such as a week with 97 days.</li>
+    </ul>
+    <p>Calculation errors are the largest category, and they occur inside the chain of thought during arithmetic. The paper gives one example of each kind.</p>
+    <blockquote><strong>Logic.</strong> Two vampires arrive in a village of 33 people. Each night every vampire turns 95 people into vampires. Qwen2.5-Math-72B computes 192 vampires after night one and then 192 &times; 95 = 18,240 new vampires on night two, ignoring that the village only has 33 people.</blockquote>
+    <blockquote><strong>Understanding.</strong> James writes a 36-page letter to 71 friends 32 times a week. Phi-4 computes 36 &times; 71 pages a week and never uses the 32, misreading the setup as one letter per friend per week.</blockquote>
+    <blockquote><strong>Calculation.</strong> Max collects trains (53 per birthday, 18 per Christmas, for 16 years, then his parents double the total). Llama-3-8B correctly gets 1,136 trains, then writes 1,136 &times; 2 = 2,268 (it is 2,272). The final 3,404 is a propagated error, and the right total is 3,408.</blockquote>
+    <p>Two more findings from the qualitative study. First, models show a <strong>pretraining bias</strong>: they reproduce the reasoning graph of the vanilla solution even when the mutated problem changes it. Second, some logic errors come from ambiguous natural language. A phrase like &ldquo;my brother is twice more older than me&rdquo; should arguably be myAge + myAge &times; 2, but models read it as 2 &times; myAge, which is what &ldquo;twice as old&rdquo; means.</p>
+    <h3>On SynDeduct the categories are stricter</h3>
+    <p>The paper defines them by what went wrong at one step: <em>Calculation</em> is right operands and operator with wrong arithmetic (7 &minus; 7 = &minus;3). <em>Logic</em> is right operands with the wrong operator (writing + where the step said &ldquo;difference&rdquo;). <em>Understanding</em> is the wrong operands or a misread definition (using T instead of Y). <em>Garbled</em> is an incoherent answer or repeated backtracking, and <em>Exit</em> covers cases where the analysing model&rsquo;s output could not be parsed.</p>
+    <p>Calculation errors dominate at every prefix and hop level. Understanding errors are present and roughly constant, and logic errors are rare. A large share of errors are <strong>garbled</strong>, which the authors flag as a concern: they tried recommended sampling and prompt settings and different serving stacks (vLLM, transformers) without changing it, and other models (Phi-4, Qwen 7B, Qwen 7B R1) do much better under identical conditions. They leave this failure mode for future work.</p>
+
+    <h2><span class="sec">10</span>Do prevalent techniques fix the decay?</h2>
+    <p>The paper tests three ideas, each compared against a matching baseline.</p>
+    <ol>
+      <li><strong>Reinforcement-learning-style fine-tuning</strong> (Qwen2.5-Math-Instruct, 7B and 72B, against the Qwen2.5 base models).</li>
+      <li><strong>Supervised fine-tuning</strong> (DeepSeek-R1-Distill-Qwen-7B and Llama-70B against their bases).</li>
+      <li><strong>Calculator tool calling at inference time.</strong> A Llama-8B model acts as an online monitor made of a reviewer and an editor. As a response is generated step by step, the reviewer checks whether a calculation is present and calls a calculator. The editor rewrites the step with the correct result and generation continues.</li>
+    </ol>
+    <p><strong>Findings.</strong> RL is the more effective of the two at cutting decay: base DC changes little on in-distribution data and drops on unseen data such as SynDeduct. SFT lowers DC and worsens decay on both datasets. The calculator monitor raises base DC by up to 15% but leaves decay unchanged. Neither post-training technique consistently improves deductive consistency across models and datasets. A calculator only targets arithmetic, not misconceptions, faulty inferences or hallucinated premises, so understanding and logic errors remain even when calculation errors are driven to a minimum.</p>
+    <div class="tbl-wrap"><table class="rank">
+      <tr><th colspan="3">Table 1 · RL post-training on SynDeduct</th></tr>
+      <tr><th>Model</th><th class="num">Base</th><th class="num">Decay</th></tr>
+      <tr><td>Qwen-2.5-72B-Instruct</td><td class="num">0.6868</td><td class="num">0.0602</td></tr>
+      <tr><td>Qwen-2.5-Math-72B-Instruct</td><td class="num">0.5674</td><td class="num">0.0273</td></tr>
+      <tr><td>Qwen-2.5-7B-Instruct</td><td class="num">0.5458</td><td class="num">0.0432</td></tr>
+      <tr><td>Qwen-2.5-Math-7B-Instruct</td><td class="num">0.2083</td><td class="num">0.0211</td></tr>
+    </table></div>
+    <div class="tbl-wrap"><table class="rank">
+      <tr><th colspan="3">Table 2 · SFT post-training on SynDeduct</th></tr>
+      <tr><th>Model</th><th class="num">Base</th><th class="num">Decay</th></tr>
+      <tr><td>Qwen-2.5-Math-7B-Instruct</td><td class="num">0.2083</td><td class="num">0.0211</td></tr>
+      <tr><td>DeepSeek-R1-Distill-Qwen-7B</td><td class="num">0.5424</td><td class="num">0.0381</td></tr>
+      <tr><td>Llama-3.3-70B-Instruct</td><td class="num">0.8465</td><td class="num">0.0212</td></tr>
+      <tr><td>DeepSeek-R1-Distill-Llama-70B</td><td class="num">0.7389</td><td class="num">0.0314</td></tr>
+    </table></div>
+    <div class="tbl-wrap"><table class="rank">
+      <tr><th colspan="3">Table 3 · RL post-training on GSM8K</th></tr>
+      <tr><th>Model</th><th class="num">Base</th><th class="num">Decay</th></tr>
+      <tr><td>Qwen-2.5-72B-Instruct</td><td class="num">0.9149</td><td class="num">0.2339</td></tr>
+      <tr><td>Qwen-2.5-Math-72B-Instruct</td><td class="num">0.9164</td><td class="num">0.1725</td></tr>
+      <tr><td>Qwen-2.5-7B-Instruct</td><td class="num">0.8881</td><td class="num">0.1618</td></tr>
+      <tr><td>Qwen-2.5-Math-7B-Instruct</td><td class="num">0.8427</td><td class="num">0.1189</td></tr>
+    </table></div>
+    <div class="tbl-wrap"><table class="rank">
+      <tr><th colspan="3">Table 4 · SFT post-training on GSM8K</th></tr>
+      <tr><th>Model</th><th class="num">Base</th><th class="num">Decay</th></tr>
+      <tr><td>Qwen-2.5-Math-7B-Instruct</td><td class="num">0.8509</td><td class="num">0.0613</td></tr>
+      <tr><td>DeepSeek-R1-Distill-Qwen-7B</td><td class="num">0.8468</td><td class="num">0.1957</td></tr>
+      <tr><td>Llama-3.3-70B-Instruct</td><td class="num">0.8532</td><td class="num">0.2007</td></tr>
+      <tr><td>DeepSeek-R1-Distill-Llama-70B</td><td class="num">0.8366</td><td class="num">0.2490</td></tr>
+    </table></div>
+    <div class="tbl-wrap"><table class="rank">
+      <tr><th colspan="3">Table 5 · Llama-3-8B-Instruct with and without the calculator monitor</th></tr>
+      <tr><th>Setting</th><th class="num">Base</th><th class="num">Decay</th></tr>
+      <tr><td>Without monitor</td><td class="num">0.7629</td><td class="num">0.3300</td></tr>
+      <tr><td>With monitor</td><td class="num">0.9081</td><td class="num">0.3704</td></tr>
+    </table></div>
+    <p>Read Table 3 next to Table 1: in each pair the RL-tuned Math model has the smaller decay, but on SynDeduct it also has the lower base. In Tables 2 and 4 the R1 distilled models show a higher decay than the models they are compared against.</p>
+
+    <div class="fig" id="fig-data"></div>
+
+    <h2><span class="sec">11</span>Conclusion and limitations</h2>
+    <p>The paper introduces a metric for deductive reasoning that needs only a text-based reasoning trace, so it applies across domains. Experiments on two synthetic datasets (SynDeduct, ProntoQA) and one real-world benchmark (GSM8K) expose the trade-offs, and the mitigation study shows that common enhancements do not close the gap.</p>
+    <p>Two limitations are stated plainly. The approach relies on auxiliary language models for parsing, error analysis and data pipelining, and residual inaccuracies may persist despite the measures taken. And the evaluation covers only <strong>linear</strong> reasoning traces; extending the framework to non-linear inference chains is future work.</p>
+
+    <h2><span class="sec">12</span>Takeaways</h2>
+    <ul>
+      <li>If you evaluate on published benchmarks only, you may be measuring recall. Perturbing the numbers reveals decay that is completely hidden on the original problems.</li>
+      <li>Long inputs are not the main problem. Long chains of inference are. Deductive consistency stays flat as more premises are given and declines as more hops are needed.</li>
+      <li>Most failures at each hop are arithmetic and logic slips, not misreading the question, and current fixes such as RL, SFT and a calculator do not remove the decay.</li>
+      <li>Report base and decay, and check coverage before trusting either one.</li>
+    </ul>
+
+    <p class="post-end">Read the paper: <a href="https://openreview.net/pdf?id=JpeDhIHEt9" target="_blank" rel="noopener">OpenReview PDF</a> · an earlier version is on <a href="https://arxiv.org/abs/2504.07080" target="_blank" rel="noopener">arXiv</a></p>
   </main>
 
   <footer id="contact">

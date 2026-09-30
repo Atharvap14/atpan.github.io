@@ -1,5 +1,5 @@
 /* ---------- blog post pages ---------- */
-.post { width: min(760px, 100% - clamp(48px, 12vw, 176px)); margin: 0 auto; padding: 44px 0 20px; }
+.post { width: min(720px, 100% - clamp(64px, 14vw, 240px)); margin: 0 auto; padding: 44px 0 20px; }
 .crumb { margin-bottom: 26px; }
 .crumb a { text-decoration: none; color: var(--muted-foreground); font-size: 0.92rem; font-weight: 500; }
 .crumb a:hover { color: var(--foreground); }
@@ -37,8 +37,10 @@
 .readout b { color: var(--foreground); font-weight: 600; }
 .readout .pair { display: flex; flex-wrap: wrap; gap: 4px 18px; }
 .controls-row { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; margin: 8px 0 4px; }
-.ctl-row { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; flex: 1 1 260px; }
+.ctl-row { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; flex: 1 1 260px; min-width: 0; max-width: 100%; }
+.ctl-row input[type=range] { min-width: 0; }
 .ctl-name { font-weight: 500; font-size: 0.9rem; min-width: 9em; white-space: nowrap; }
+@media (max-width: 480px) { .ctl-name { min-width: 7em; } .ctl-row output { min-width: 3em; } }
 .ctl-row output { min-width: 4.2em; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted-foreground); }
 .ctl-row input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; height: 22px; background: transparent; cursor: pointer; --p: 0%; }
 .ctl-row input[type=range]::-webkit-slider-runnable-track { height: 2px; background: linear-gradient(to right, var(--sk-ink) var(--p), var(--sk-faint) var(--p)); }

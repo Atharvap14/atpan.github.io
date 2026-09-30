@@ -1,5 +1,5 @@
 /*
- * sketch.js — a tiny hand-drawn animation engine (no dependencies).
+ * sketch.js: a tiny hand-drawn animation engine (no dependencies).
  *
  * A scene is a plain function that receives a `Sketch`, creates strokes / shapes /
  * labels and schedules them on a timeline (times are in ms). The renderer is a pure

@@ -1,5 +1,5 @@
 /*
- * scenes.js — one animated sketch per paper (800 x 520 canvas).
+ * scenes.js: one animated sketch per paper (800 x 520 canvas).
  * Rule: no sentences. Text appears only as arrow labels or as a highlighted word.
  * Times are in milliseconds.
  */

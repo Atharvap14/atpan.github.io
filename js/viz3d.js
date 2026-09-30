@@ -1,5 +1,5 @@
 /*
- * viz3d.js — a tiny drag-to-rotate 3D canvas view (no libraries).
+ * viz3d.js: a tiny drag-to-rotate 3D canvas view (no libraries).
  * Figures hand it a draw callback; it sorts primitives back-to-front and renders
  * them in the site's ink colours (they follow the light / dark theme).
  */
@@ -97,6 +97,16 @@
       path: function (pts, o) { o = o || {}; var Q = pts.map(proj), z = 0; Q.forEach(function (q) { z += q[2]; }); items.push({ z: z / Q.length + (o.zb || 0), f: function () { ctx.beginPath(); Q.forEach(function (q, i) { if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); }); ctx.strokeStyle = col[o.c || 'ink']; ctx.lineWidth = o.w || 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.globalAlpha = o.a == null ? 1 : o.a; ctx.setLineDash(o.dash || []); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; } }); },
       dot: function (p, o) { o = o || {}; var A = proj(p); items.push({ z: A[2], f: function () { ctx.beginPath(); ctx.arc(A[0], A[1], (o.r || 3) * A[3], 0, 6.2832); if (o.fill !== false) { ctx.fillStyle = col[o.c || 'ink']; ctx.globalAlpha = o.a == null ? 1 : o.a; ctx.fill(); } if (o.stroke) { ctx.strokeStyle = col[o.stroke]; ctx.lineWidth = o.sw || 2; ctx.globalAlpha = 1; ctx.stroke(); } ctx.globalAlpha = 1; } }); return A; },
       poly: function (pts, o) { o = o || {}; var Q = pts.map(proj), z = 0; Q.forEach(function (q) { z += q[2]; }); items.push({ z: z / Q.length, f: function () { ctx.beginPath(); Q.forEach(function (q, i) { if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); }); ctx.closePath(); if (o.fill) { ctx.globalAlpha = o.fa == null ? 0.2 : o.fa; ctx.fillStyle = col[o.fill]; ctx.fill(); ctx.globalAlpha = 1; } if (o.stroke) { ctx.strokeStyle = col[o.stroke]; ctx.lineWidth = o.w || 1.4; ctx.globalAlpha = o.a == null ? 1 : o.a; ctx.stroke(); ctx.globalAlpha = 1; } } }); },
+      // many dots at once, depth-sorted inside one draw call: list of {p, r, c, a}
+      dots: function (list) {
+        var Q = list.map(function (d) { var A = proj(d.p); return { x: A[0], y: A[1], z: A[2], f: A[3], r: d.r || 2, c: d.c || 'ink', a: d.a == null ? 1 : d.a }; });
+        var z = 0; Q.forEach(function (q) { z += q.z; });
+        items.push({ z: Q.length ? z / Q.length - 1e3 : 0, f: function () {
+          Q.sort(function (u, v) { return u.z - v.z; });
+          for (var i = 0; i < Q.length; i++) { var q = Q[i]; ctx.globalAlpha = q.a; ctx.fillStyle = col[q.c]; ctx.beginPath(); ctx.arc(q.x, q.y, q.r * q.f, 0, 6.2832); ctx.fill(); }
+          ctx.globalAlpha = 1;
+        } });
+      },
       text: function (p, s, o) { o = o || {}; var A = proj(p); items.push({ z: A[2] + 5, f: function () { ctx.font = '600 ' + (o.size || 19) + 'px Caveat, "Segoe Print", cursive'; ctx.textAlign = o.align || 'left'; ctx.lineWidth = 5; ctx.strokeStyle = col.bg; ctx.lineJoin = 'round'; ctx.strokeText(s, A[0] + (o.dx || 0), A[1] + (o.dy || 0)); ctx.fillStyle = col[o.c || 'ink']; ctx.fillText(s, A[0] + (o.dx || 0), A[1] + (o.dy || 0)); } }); },
     };
     if (this.onDraw) this.onDraw(api);

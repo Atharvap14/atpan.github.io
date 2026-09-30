@@ -1,8 +1,8 @@
 /*
  * Interactive 3D figures for the LISR explainer. Everything is computed live.
- *   A. Theorem 1  – gradient descent is confined to alpha0 + range(VV^T)
- *   B. Theorem 2  – Voronoi supports + 3 queries per cell => block-diagonal, full rank
- *   C. Algorithm 1 – queries at p + eps*(x,y,z) make VV^T = c*I
+ *   A. Theorem 1  : gradient descent is confined to alpha0 + range(VV^T)
+ *   B. Theorem 2  : Voronoi patches on a real scan (Stanford Bunny) => block-diagonal, full rank
+ *   C. Algorithm 1: queries at p + eps*(x,y,z) make VV^T = c*I
  * The 3D setting mirrors the paper: phi_i(x) = r_i(x) * grad ||x - p_i||^3 (3 coefficients per kernel point).
  */
 (function () {
@@ -79,98 +79,113 @@
     h('p', 'fig-cap', 'With rank 3 the iterates spiral into the target. With rank 2 they never leave the shaded plane through the start point, and with rank 1 they stay on the dashed line; the target lies off it, so gradient descent cannot reach it. This is exactly the &ldquo;if and only if&rdquo; of Theorem 1: convergence to the true solution needs <i>VV<sup>T</sup></i> to be full rank.', root);
   }
 
-  /* ============================ shared scene: kernel points + Voronoi cells */
-  var K = 10, N = 3 * K, seed = 7, sites, dense, cellOf, cellPts, dispPts, epsMax;
-  function near(p) { var b = 0, bd = 1e9; sites.forEach(function (s, k) { var d = nrm(sub(p, s)); if (d < bd) { bd = d; b = k; } }); return b; }
-  function layout() {
-    var r = V.rng(seed), i;
-    sites = []; for (i = 0; i < K; i++) sites.push([0.12 + 0.76 * r(), 0.12 + 0.76 * r(), 0.12 + 0.76 * r()]);
-    dense = []; for (i = 0; i < 6000; i++) dense.push([r(), r(), r()]);
-    cellOf = dense.map(function (p) { return near(p); });
-    cellPts = sites.map(function () { return []; });
-    dense.forEach(function (p, k) { cellPts[cellOf[k]].push(p); });
-    dispPts = dense.slice(0, 900).map(function (p, k) { return { p: p, c: cellOf[k] }; });
-    var m = 1e9;
-    sites.forEach(function (a, i2) { sites.forEach(function (b, j2) { if (i2 !== j2) m = Math.min(m, nrm(sub(a, b))); }); });
-    epsMax = Math.floor(100 * 0.45 * m) / 100;
+  /* ====================== Stanford Bunny: shared data and helpers */
+  var P = [], Nr = [], ready = false;
+  var d2 = function (a, b) { var x = a[0] - b[0], y = a[1] - b[1], z = a[2] - b[2]; return x * x + y * y + z * z; };
+  function nearestIdx(x, pts) { var b = 0, bd = 1e9; for (var i = 0; i < pts.length; i++) { var d = d2(x, pts[i]); if (d < bd) { bd = d; b = i; } } return b; }
+  // signed distance to the scanned surface: distance to the nearest sample, signed by its outward normal
+  function sdf(x) { var i = nearestIdx(x, P), s = dot(sub(x, P[i]), Nr[i]); return (s >= 0 ? 1 : -1) * Math.sqrt(d2(x, P[i])); }
+  function fps(pts, k, start) {
+    var sel = [start], dd = pts.map(function (p) { return d2(p, pts[start]); });
+    while (sel.length < k) {
+      var bi = 0; for (var i = 1; i < pts.length; i++) if (dd[i] > dd[bi]) bi = i;
+      sel.push(bi);
+      for (var j = 0; j < pts.length; j++) { var t = d2(pts[j], pts[bi]); if (t < dd[j]) dd[j] = t; }
+    }
+    return sel;
   }
   // phi(x) = grad ||x - p||^3 = 3 ||x-p|| (x-p)
   function phi(x, p) { var d = sub(x, p), n = nrm(d); return mul(d, 3 * n); }
-  function queries(mode, eps, rs) {
-    var Q = [];
-    sites.forEach(function (p, i) {
-      if (mode === 'alg1') { [[1, 0, 0], [0, 1, 0], [0, 0, 1]].forEach(function (e) { Q.push({ cell: i, x: add(p, mul(e, eps)) }); }); }
-      else { for (var k = 0; k < 3; k++) Q.push({ cell: i, x: cellPts[i][Math.floor(rs() * cellPts[i].length)] }); }
-    });
-    return Q;
+  function matrix(Q, K) { // V^T: rows = queries, 3 columns per kernel point (hard Voronoi support)
+    return Q.map(function (q) { var row = new Array(3 * K).fill(0), f = phi(q.x, q.p); row[3 * q.cell] = f[0]; row[3 * q.cell + 1] = f[1]; row[3 * q.cell + 2] = f[2]; return row; });
   }
-  function matrix(Q) { // V^T: rows = queries, columns = 3 coefficients per kernel point (hard Voronoi support)
-    return Q.map(function (q) { var row = new Array(N).fill(0), f = phi(q.x, sites[q.cell]); row[3 * q.cell] = f[0]; row[3 * q.cell + 1] = f[1]; row[3 * q.cell + 2] = f[2]; return row; });
-  }
-  function heat(svg, A, sel) {
+  function heat(svg, A, sel, K) {
     svg.textContent = '';
-    var s = 300, c = s / N, m = 0, x0 = 8, y0 = 8;
+    var N = 3 * K, s = 300, c = s / N, m = 0, x0 = 8, y0 = 8;
     A.forEach(function (row) { row.forEach(function (v) { m = Math.max(m, Math.abs(v)); }); });
     el('rect', { x: x0, y: y0, width: s, height: s, fill: 'none', stroke: 'var(--sk-faint)', 'stroke-width': 2, rx: 3 }, svg);
     A.forEach(function (row, r) { row.forEach(function (v, q) { if (Math.abs(v) > 1e-9 * (m || 1)) el('rect', { x: x0 + q * c, y: y0 + r * c, width: c + 0.3, height: c + 0.3, fill: 'var(--sk-ink)', 'fill-opacity': Math.min(1, Math.pow(Math.abs(v) / m, 0.6)) }, svg); }); });
-    if (sel != null) el('rect', { x: x0 + 3 * sel * c, y: y0 + 3 * sel * c, width: 3 * c, height: 3 * c, fill: 'var(--sk-hl)', 'fill-opacity': 0.25, stroke: 'var(--sk-ink)', 'stroke-width': 2.4, rx: 2 }, svg);
+    if (sel != null) el('rect', { x: x0 + 3 * sel * c, y: y0 + 3 * sel * c, width: 3 * c, height: 3 * c, fill: 'var(--sk-hl)', 'fill-opacity': 0.3, stroke: 'var(--sk-ink)', 'stroke-width': 2.4, rx: 2 }, svg);
   }
+  function need(id, msg) { var r = document.getElementById(id); h('div', 'fig-sub', msg, r); }
 
-  /* ====================================== B. Theorem 2: Voronoi -> blocks */
+  /* ===================================== B. Theorem 2 on the bunny */
   function figVoronoi() {
-    var root = fig('fig-voronoi', 'Figure B · Voronoi supports make the matrix block-diagonal (Theorem 2)',
-      'Every kernel point (cross) owns its 3D Voronoi cell, and its basis is switched on only inside that cell (<i>r<sub>i</sub>(x) = 1</i> there, 0 elsewhere). Take three independent queries per cell and the data matrix falls into 3&times;3 blocks along the diagonal. Click a kernel point, or use the slider, to pick a cell. Drag to rotate.');
+    var root = fig('fig-voronoi', 'Figure B · Voronoi patches on a real scan (Theorem 2)',
+      'The Stanford Bunny as a point cloud. Every kernel point (cross) owns the patch of the scan closest to it, and its basis is switched on only inside that patch. Take three independent queries per patch and the data matrix falls into 3&times;3 blocks along the diagonal. Click a kernel point or use the slider to pick a patch. Drag to rotate.');
     var controls = h('div', 'controls-row', null, root);
     var cols = h('div', 'fig-cols', null, root);
-    var host = h('div', 'view-host', null, cols);
-    var right = h('div', null, null, cols);
-    var view = new View3D(host, { aspect: 0.95, zoom: 1.45, label: 'Interactive 3D view of Voronoi cells around kernel points' });
+    var host = h('div', 'view-host', null, cols), right = h('div', null, null, cols);
+    var view = new View3D(host, { aspect: 0.95, zoom: 2.5, center: [0, 0, 0], ry: 0.7, rx: -0.15, label: 'Interactive 3D view of the Stanford Bunny point cloud split into Voronoi patches' });
     var svg = el('svg', { viewBox: '0 0 316 316', role: 'img' }, right);
     var ro = h('div', 'readout', null, root);
-    var sel = 0, Q, A, sl;
-    function rebuild() {
-      Q = queries('random', 0, V.rng(seed + 100)); A = matrix(Q);
-      var ev = V.eigvals(V.gram(A)), rk = V.rank(ev);
-      heat(svg, A, sel);
-      ro.innerHTML = '<div class="pair"><span>rank of <i>VV<sup>T</sup></i>: <b>' + rk + ' of ' + N + '</b></span><span>blocks: <b>' + K + '</b> of size 3&times;3, each full rank</span><span>selected cell holds <b>' + Math.round(100 * cellPts[sel].length / dense.length) + '%</b> of the volume</span></div>';
+    var K = 24, mode = 'full', sel = 0, seed = 1, S, ker, cellOf, colorOf, Q;
+
+    function build() {
+      var rs = V.rng(seed * 17 + 3), noise = V.rng(99);
+      if (mode === 'full') S = P.map(function (p) { return p; });
+      else S = P.filter(function (p, i) { return Nr[i][2] > 0.05; }).map(function (p) { return [p[0] + (noise() - 0.5) * 0.012, p[1] + (noise() - 0.5) * 0.012, p[2] + (noise() - 0.5) * 0.012]; });
+      var idx = fps(S, K, Math.floor(rs() * S.length));
+      ker = idx.map(function (i) { return S[i]; });
+      cellOf = S.map(function (p) { return nearestIdx(p, ker); });
+      // greedy 4-colouring of neighbouring patches (two nearest kernel points of a sample are neighbours)
+      var adj = ker.map(function () { return {}; });
+      S.forEach(function (p, i) { var a = cellOf[i], b2 = -1, bd = 1e9; ker.forEach(function (k, j) { if (j !== a) { var d = d2(p, k); if (d < bd) { bd = d; b2 = j; } } }); if (b2 >= 0) { adj[a][b2] = 1; adj[b2][a] = 1; } });
+      colorOf = []; var tones = ['ink', 'gray', 'faint', 'hl'];
+      ker.forEach(function (k, i) { var used = {}; Object.keys(adj[i]).forEach(function (j) { if (colorOf[j] != null) used[colorOf[j]] = 1; }); var c = 0; while (used[c]) c++; colorOf[i] = c % 4; });
+      Q = []; var cellPts = ker.map(function () { return []; });
+      S.forEach(function (p, i) { cellPts[cellOf[i]].push(p); });
+      ker.forEach(function (p, i) { for (var k = 0; k < 3; k++) { var b = cellPts[i][Math.floor(rs() * cellPts[i].length)], v = [rs() - 0.5, rs() - 0.5, rs() - 0.5]; Q.push({ cell: i, p: p, x: add(b, mul(v, 0.08)) }); } });
+      var A = matrix(Q, K), ev = V.eigvals(V.gram(A));
+      heat(svg, A, sel, K);
+      ro.innerHTML = '<div class="pair"><span>scan points: <b>' + S.length + '</b></span><span>kernel points / patches: <b>' + K + '</b></span><span>rank of <i>VV<sup>T</sup></i>: <b>' + V.rank(ev) + ' of ' + (3 * K) + '</b></span><span>selected patch: <b>' + cellPts[sel].length + '</b> scan points</span></div>';
       view.touch();
     }
-    sl = V.slider(controls, 'Selected cell', 1, K, 1, 1, function (v) { return v; }, function (v) { sel = v - 1; rebuild(); });
-    V.button(controls, 'New layout', function () { seed++; layout(); rebuild(); });
-    view.onClick = function (x, y) { var i = view.pick(sites, x, y, 26); if (i >= 0) { sl.input.value = i + 1; sl.input.dispatchEvent(new Event('input')); } };
+    var sl = V.slider(controls, 'Selected patch', 1, K, 1, 1, function (v) { return v; }, function (v) { sel = v - 1; build(); });
+    var seg = h('div', 'seg', null, controls), b1 = h('button', null, 'Complete scan', seg), b2 = h('button', null, 'Single-view scan', seg);
+    b1.setAttribute('aria-pressed', 'true'); b2.setAttribute('aria-pressed', 'false');
+    function setMode(m) { mode = m; b1.setAttribute('aria-pressed', m === 'full'); b2.setAttribute('aria-pressed', m !== 'full'); build(); }
+    b1.onclick = function () { setMode('full'); }; b2.onclick = function () { setMode('partial'); };
+    V.button(controls, 'New kernel points', function () { seed++; build(); });
+    view.onClick = function (x, y) { var i = view.pick(ker, x, y, 24); if (i >= 0) { sl.input.value = i + 1; sl.input.dispatchEvent(new Event('input')); } };
     view.onDraw = function (api) {
-      cube(api, 0, 1);
-      dispPts.forEach(function (d) { api.dot(d.p, d.c === sel ? { r: 2.7, c: 'ink' } : { r: 1.7, c: 'gray', a: 0.35 }); });
-      Q.forEach(function (q) { if (q.cell === sel) api.dot(q.x, { r: 6, c: 'hl', stroke: 'ink', sw: 2.2 }); });
-      sites.forEach(function (p, i) { cross(api, p, i === sel ? 0.05 : 0.028, { c: 'ink', w: i === sel ? 4 : 2.6 }); });
+      var tones = ['ink', 'gray', 'faint', 'hl'], list = [];
+      S.forEach(function (p, i) { var c = cellOf[i], on = c === sel; list.push({ p: p, r: on ? 3.6 : 2.7, c: tones[colorOf[c]], a: on ? 1 : 0.8 }); });
+      api.dots(list);
+      Q.forEach(function (q) { if (q.cell === sel) api.dot(q.x, { r: 6.5, c: 'hl', stroke: 'ink', sw: 2.4 }); });
+      ker.forEach(function (p, i) { var s = i === sel ? 0.035 : 0.02, o = { c: 'ink', w: i === sel ? 4.4 : 2.8 }; cross(api, p, s, o); });
     };
-    rebuild();
-    h('p', 'fig-cap', 'Left: kernel points, and space samples coloured by the cell they fall in (the selected cell in dark ink; the highlighted dots are its three queries). Right: the data matrix <i>V<sup>T</sup></i> &ndash; one row per query, three columns per kernel point. A query only feels its own cell&rsquo;s basis, so everything off the blocks is exactly zero. The rank of a block-diagonal matrix is the sum of its blocks&rsquo; ranks; three independent queries make every block full rank, hence <i>VV<sup>T</sup></i> is full rank.', root);
+    build();
+    h('p', 'fig-cap', 'Dots are the scan, shaded by the patch (Voronoi cell) they fall in; the selected patch is drawn large, with its three queries highlighted (points in the space around the patch, not on the surface). Right: the data matrix <i>V<sup>T</sup></i>, one row per query and three columns per kernel point. A query only feels its own patch&rsquo;s basis, so everything off the blocks is exactly zero, and three independent queries make each block full rank, hence <i>VV<sup>T</sup></i> is full rank. The queries must really be independent: three points on a flat sheet of surface are not. For a partial scan the paper predicts the kernel points with a network; here they are picked by farthest-point sampling as a stand-in.', root);
   }
 
-  /* ================================= C. Algorithm 1: VV^T = c I, and speed */
+  /* ==================================== C. Algorithm 1 on the bunny */
   function figSelect() {
     var root = fig('fig-select', 'Figure C · Faster-convergence query selection (Algorithm 1)',
-      'Instead of any three independent queries, put them at <i>p<sub>i</sub> + &epsilon;&nbsp;x&#770;</i>, <i>p<sub>i</sub> + &epsilon;&nbsp;y&#770;</i>, <i>p<sub>i</sub> + &epsilon;&nbsp;z&#770;</i> &ndash; a small tripod around every kernel point. Each block becomes 3&epsilon;<sup>2</sup>&middot;I, so <i>VV<sup>T</sup> = cI</i>. Compare the two strategies.');
+      'Left: the bunny with a small tripod at every kernel point, the queries <i>p<sub>i</sub> + &epsilon;&nbsp;x&#770;</i>, <i>p<sub>i</sub> + &epsilon;&nbsp;y&#770;</i>, <i>p<sub>i</sub> + &epsilon;&nbsp;z&#770;</i>. Right: zoom into one kernel point and compare with three random queries in its patch. Each block becomes 3&epsilon;<sup>2</sup>&middot;I, so <i>VV<sup>T</sup> = cI</i>.');
     var controls = h('div', 'controls-row', null, root);
     var cols = h('div', 'fig-cols', null, root);
-    var host = h('div', 'view-host', null, cols);
-    var right = h('div', null, null, cols);
-    var view = new View3D(host, { aspect: 0.95, zoom: 6.5, auto: false, label: 'Interactive 3D view of the query tripod around one kernel point' });
-    var svgH = el('svg', { viewBox: '0 0 316 316', role: 'img' }, right);
-    var mode = 'alg1', sel = 0, eps = 0.06, qA, qR;
-    var seg = h('div', 'seg', null, controls), b1 = h('button', null, 'Algorithm 1', seg), b2 = h('button', null, 'Random in cell', seg);
-    b1.setAttribute('aria-pressed', 'true'); b2.setAttribute('aria-pressed', 'false');
-    function setMode(m) { mode = m; b1.setAttribute('aria-pressed', m === 'alg1'); b2.setAttribute('aria-pressed', m !== 'alg1'); update(); }
-    b1.onclick = function () { setMode('alg1'); }; b2.onclick = function () { setMode('rand'); };
-    V.slider(controls, 'Kernel point', 1, K, 1, 1, function (v) { return v; }, function (v) { sel = v - 1; update(); });
-    V.slider(controls, 'Tripod size ε', 0.01, 0.12, 0.005, 0.06, function (v) { return v.toFixed(3); }, function (v) { eps = Math.min(v, epsMax); update(); });
+    var hostA = h('div', 'view-host', null, cols), hostB = h('div', 'view-host', null, cols);
+    var viewA = new View3D(hostA, { aspect: 0.95, zoom: 2.5, center: [0, 0, 0], ry: 0.7, rx: -0.15, label: 'Interactive 3D view of the bunny with query tripods at every kernel point' });
+    var viewB = new View3D(hostB, { aspect: 0.95, zoom: 15, auto: false, ry: 0.5, rx: -0.3, label: 'Interactive zoom on the queries around one kernel point' });
+    var heats = h('div', 'fig-cols', null, root), hA = h('div', null, null, heats), hB = h('div', null, null, heats);
+    var svgR = el('svg', { viewBox: '0 0 316 340', role: 'img' }, hA), svgT = el('svg', { viewBox: '0 0 316 340', role: 'img' }, hB);
     var chartWrap = h('div', null, null, root), svgC = el('svg', { viewBox: '0 0 640 190', role: 'img' }, chartWrap);
     var ro = h('div', 'readout', null, root);
-    var target = function (x) { return nrm(sub(x, [0.5, 0.5, 0.5])) - 0.3; };
+    var K = 24, ker, nnD, epsMax, eps = 0.03, sel = 0, mode = 'alg1', qA, qR, cloudShown;
+
+    ker = fps(P, K, 0).map(function (i) { return P[i]; });
+    nnD = ker.map(function (p, i) { var m = 1e9; ker.forEach(function (q, j) { if (i !== j) m = Math.min(m, Math.sqrt(d2(p, q))); }); return m; });
+    epsMax = Math.floor(100 * 0.45 * Math.min.apply(null, nnD)) / 100;
+    eps = Math.min(eps, epsMax);
+    cloudShown = P.filter(function (p, i) { return i % 2 === 0; });
+
+    var rr = V.rng(5);
+    qR = []; ker.forEach(function (p, i) { for (var k = 0; k < 3; k++) { var v; do { v = [rr() * 2 - 1, rr() * 2 - 1, rr() * 2 - 1]; } while (dot(v, v) > 1); qR.push({ cell: i, p: p, x: add(p, mul(v, 0.6 * nnD[i])) }); } });
+    function alg1Q(e) { var Q = []; ker.forEach(function (p, i) { [[1, 0, 0], [0, 1, 0], [0, 0, 1]].forEach(function (u) { Q.push({ cell: i, p: p, x: add(p, mul(u, e)) }); }); }); return Q; }
 
     function analyse(Q) {
-      var A = matrix(Q), G = V.gram(A), ev = V.eigvals(G), s = Q.map(function (q) { return target(q.x); });
+      var N = 3 * K, A = matrix(Q, K), G = V.gram(A), ev = V.eigvals(G), s = Q.map(function (q) { return sdf(q.x); });
       var eta = 1 / ev[0], al = new Array(N).fill(0), s2 = s.reduce(function (t, v) { return t + v * v; }, 0), curve = [1], T = 40, c, r;
       function err() { var e = 0; A.forEach(function (row, r2) { var p = 0; for (var c2 = 0; c2 < N; c2++) p += row[c2] * al[c2]; e += (p - s[r2]) * (p - s[r2]); }); return e / s2; }
       for (var t = 0; t < T; t++) {
@@ -187,9 +202,10 @@
 
     function update() {
       eps = Math.min(eps, epsMax);
-      qA = queries('alg1', eps); qR = queries('random', 0, V.rng(seed + 100));
-      var rA = analyse(qA), rR = analyse(qR), cur = mode === 'alg1' ? rA : rR;
-      heat(svgH, cur.G, sel);
+      qA = alg1Q(eps);
+      var rA = analyse(qA), rR = analyse(qR);
+      heat(svgR, rR.G, sel, K); heat(svgT, rA.G, sel, K);
+      [['random queries', svgR], ['Algorithm 1', svgT]].forEach(function (x) { var t = el('text', { x: 158, y: 334, 'text-anchor': 'middle', 'font-size': 22 }, x[1]); t.textContent = x[0]; });
       svgC.textContent = '';
       var g = el('g', null, svgC), x0 = 46, y0 = 24, w = 570, hh = 122;
       el('path', { d: 'M' + x0 + ' ' + y0 + 'V' + (y0 + hh) + 'H' + (x0 + w), stroke: 'var(--sk-ink)', 'stroke-width': 2.4, fill: 'none', 'stroke-linecap': 'round' }, g);
@@ -202,26 +218,48 @@
       line(rR, 'var(--sk-gray)', 3); line(rA, 'var(--sk-ink)', 4);
       var fmt = function (r) { return r.it === null ? '&gt; 40' : r.it; };
       ro.innerHTML =
-        '<div class="pair"><span><b>Algorithm 1</b> &mdash; diagonal of <i>VV<sup>T</sup></i> between <b>' + V.sci(rA.dmin) + '</b> and <b>' + V.sci(rA.dmax) + '</b>, largest off-diagonal <b>' + V.sci(rA.off) + '</b> &rarr; <i>cI</i> with <i>c = 9&epsilon;<sup>4</sup> = ' + V.sci(9 * Math.pow(eps, 4)) + '</i>; condition number <b>' + rA.cond.toFixed(2) + '</b>; error below 10<sup>&minus;6</sup> after <b>' + fmt(rA) + '</b> step(s)</span></div>' +
-        '<div class="pair"><span><b>Random in cell</b> &mdash; condition number <b>' + V.sci(rR.cond) + '</b>; error below 10<sup>&minus;6</sup> after <b>' + fmt(rR) + '</b> steps</span></div>' +
-        '<div class="legend"><span><i></i>Algorithm 1</span><span><i class="g"></i>random in cell</span></div>';
-      view.center = sites[sel]; view.touch();
+        '<div class="pair"><span><b>Algorithm 1</b>: diagonal of <i>VV<sup>T</sup></i> between <b>' + V.sci(rA.dmin) + '</b> and <b>' + V.sci(rA.dmax) + '</b>, largest off-diagonal <b>' + V.sci(rA.off) + '</b>, so <i>VV<sup>T</sup> = cI</i> with <i>c = 9&epsilon;<sup>4</sup> = ' + V.sci(9 * Math.pow(eps, 4)) + '</i>; condition number <b>' + rA.cond.toFixed(2) + '</b>; error below 10<sup>&minus;6</sup> after <b>' + fmt(rA) + '</b> step(s)</span></div>' +
+        '<div class="pair"><span><b>Random queries</b>: condition number <b>' + V.sci(rR.cond) + '</b>; error below 10<sup>&minus;6</sup> after <b>' + fmt(rR) + '</b> steps</span></div>' +
+        '<div class="legend"><span><i></i>Algorithm 1</span><span><i class="g"></i>random queries</span></div>';
+      viewB.center = ker[sel]; viewA.touch(); viewB.touch();
     }
-    view.onDraw = function (api) {
-      var p = sites[sel];
-      cellPts[sel].slice(0, 500).forEach(function (x) { api.dot(x, { r: 1.6, c: 'gray', a: 0.3 }); });
-      sites.forEach(function (s, i) { if (i !== sel && nrm(sub(s, p)) < 0.5) cross(api, s, 0.02, { c: 'gray', w: 1.6 }); });
-      (mode === 'alg1' ? qA : qR).filter(function (q) { return q.cell === sel; }).forEach(function (q, k) {
-        api.line(p, q.x, { c: 'ink', w: 2.4, dash: mode === 'alg1' ? null : [5, 5] });
-        api.dot(q.x, { r: 6.5, c: 'hl', stroke: 'ink', sw: 2.4 });
-        if (mode === 'alg1') api.text(q.x, ['x', 'y', 'z'][k], { dx: 9, dy: -7, size: 22 });
+    V.slider(controls, 'Kernel point', 1, K, 1, 1, function (v) { return v; }, function (v) { sel = v - 1; update(); });
+    V.slider(controls, 'Tripod size ε', 0.005, epsMax, 0.005, eps, function (v) { return v.toFixed(3); }, function (v) { eps = v; update(); });
+    var seg = h('div', 'seg', null, controls), b1 = h('button', null, 'Algorithm 1', seg), b2 = h('button', null, 'Random queries', seg);
+    b1.setAttribute('aria-pressed', 'true'); b2.setAttribute('aria-pressed', 'false');
+    function setMode(m) { mode = m; b1.setAttribute('aria-pressed', m === 'alg1'); b2.setAttribute('aria-pressed', m !== 'alg1'); viewB.touch(); }
+    b1.onclick = function () { setMode('alg1'); }; b2.onclick = function () { setMode('rand'); };
+    viewA.onClick = function (x, y) { var i = viewA.pick(ker, x, y, 24); if (i >= 0) { sel = i; update(); } };
+
+    viewA.onDraw = function (api) {
+      api.dots(cloudShown.map(function (p) { return { p: p, r: 1.7, c: 'gray', a: 0.38 }; }));
+      ker.forEach(function (p, i) {
+        var o = { c: 'ink', w: i === sel ? 3.6 : 2.2 };
+        [[1, 0, 0], [0, 1, 0], [0, 0, 1]].forEach(function (u) { api.line(p, add(p, mul(u, eps)), o); });
+        api.dot(p, { r: i === sel ? 5.5 : 3.4, c: 'ink' });
       });
-      api.dot(p, { r: 7, c: 'ink' });
+    };
+    viewB.onDraw = function (api) {
+      var p = ker[sel];
+      api.dots(P.filter(function (q) { return d2(q, p) < 0.14 * 0.14; }).map(function (q) { return { p: q, r: 3, c: 'gray', a: 0.5 }; }));
+      var Q = (mode === 'alg1' ? qA : qR).filter(function (q) { return q.cell === sel; });
+      Q.forEach(function (q, k) {
+        api.line(p, q.x, { c: 'ink', w: 2.6, dash: mode === 'alg1' ? null : [6, 6] });
+        api.dot(q.x, { r: 7, c: 'hl', stroke: 'ink', sw: 2.6 });
+        if (mode === 'alg1') api.text(q.x, ['x', 'y', 'z'][k], { dx: 10, dy: -8, size: 24 });
+      });
+      api.dot(p, { r: 7.5, c: 'ink' });
     };
     update();
-    h('p', 'fig-cap', 'Left: one kernel point with its cell&rsquo;s space samples (grey) and its three queries. Right: <i>VV<sup>T</sup></i> for the chosen strategy (dark = large). Below: gradient descent on the SDF loss for both strategies &ndash; with the tripod, all directions are scaled equally, so a single step lands on the optimum. Toy setup: 10 kernel points in the unit cube fitting the signed distance of a sphere.', root);
+    h('p', 'fig-cap', 'Left: kernel points on the bunny, each with its tripod. Right: one kernel point up close (grey dots are the scan surface). With Algorithm 1 the three queries sit at <i>p + &epsilon;</i> along the coordinate axes; the random queries scatter across the patch. Below the views: <i>VV<sup>T</sup></i> for both strategies (dark = large) and gradient descent on the signed-distance loss. The signed distance is estimated from the scan itself (distance to the nearest sample, signed by its normal).', root);
   }
 
-  layout();
-  figStuck(); figVoronoi(); figSelect();
+  fetch('../assets/data/bunny.json').then(function (r) { return r.json(); }).then(function (j) {
+    for (var i = 0; i < j.n; i++) { P.push([j.p[3 * i] / 1000, j.p[3 * i + 1] / 1000, j.p[3 * i + 2] / 1000]); Nr.push([j.nr[3 * i] / 100, j.nr[3 * i + 1] / 100, j.nr[3 * i + 2] / 100]); }
+    figVoronoi(); figSelect();
+  }).catch(function () {
+    need('fig-voronoi', 'The bunny data could not be loaded (open this page from a web server, not from a file).');
+    need('fig-select', 'The bunny data could not be loaded.');
+  });
+  figStuck();
 })();

@@ -20,15 +20,6 @@
 
   function hash(str) { var h = 7; for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return Math.abs(h) + 1; }
 
-  /* ---------- one-shot doodles (underline, frame, headings) ---------- */
-  function doodle(svg, name, opts) {
-    var scene = window.SCENES[name];
-    if (!scene) return;
-    var p = new window.SketchPlayer(svg, scene, Object.assign({ once: true, seed: hash(name) }, opts));
-    p.reduced = reduced;
-    whenVisible(svg, function (v) { if (v && !p.started) { p.started = true; p.setVisible(true); if (reduced) { p.seekMs(1e6); } else p.play(); } }, 0.2);
-  }
-
   /* ---------- paper sketches ---------- */
   function mountPaper(card) {
     var name = card.getAttribute('data-scene');
@@ -72,22 +63,62 @@
     scrub.addEventListener('change', function () { dragging = false; });
     scrub.addEventListener('pointerup', function () { dragging = false; });
 
-    whenVisible(card, function (visible) {
-      if (visible) {
-        player.setVisible(true);
-        if (!started) {
-          started = true;
-          if (reduced) { userPaused = true; ui(player); } else player.play();
-        } else if (!userPaused && !player.playing) player.play();
-      } else {
-        player.setVisible(false); // stop rendering off-screen (playing state is kept)
-      }
-    }, 0.35);
-
-    // build now so the controls are in sync; reduced-motion users get the finished sketch
     player.build();
     ui(player);
     (window.sketchPlayers = window.sketchPlayers || {})[name] = player;
+
+    if (card.classList.contains('solo')) {
+      // blog hero sketch: play when scrolled into view
+      whenVisible(card, function (visible) {
+        if (visible) {
+          player.setVisible(true);
+          if (!started) { started = true; if (reduced) { userPaused = true; ui(player); } else player.play(); }
+          else if (!userPaused && !player.playing) player.play();
+        } else player.setVisible(false);
+      }, 0.35);
+      return;
+    }
+
+    // paper cards: the paper's figure is shown; hovering pops it into a corner thumbnail and plays the sketch
+    var fig = box.querySelector('.paper-fig');
+    var canHover = !!(window.matchMedia && window.matchMedia('(hover: hover)').matches);
+    function isOn() { return card.getAttribute('data-show') === 'sketch'; }
+    function idleFrame() { player.seekMs(fig ? 0 : 1e6); }
+    function activate() {
+      if (isOn()) return;
+      card.setAttribute('data-show', 'sketch');
+      userPaused = false;
+      player.setVisible(true);
+      if (reduced) { player.seekMs(1e6); ui(player); } else player.replay();
+    }
+    function deactivate() {
+      if (!isOn()) return;
+      card.setAttribute('data-show', 'idle');
+      player.pause();
+      player.setVisible(false);
+      idleFrame();
+    }
+    card.setAttribute('data-show', 'idle');
+    idleFrame();
+
+    if (fig) {
+      fig.setAttribute('tabindex', '0');
+      fig.setAttribute('role', 'button');
+      fig.setAttribute('aria-label', 'Play the sketch explainer for this paper');
+      fig.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); isOn() ? deactivate() : activate(); } });
+    }
+    if (canHover) {
+      box.addEventListener('pointerenter', activate);
+      box.addEventListener('pointerleave', deactivate);
+      box.addEventListener('focusin', activate);
+      box.addEventListener('focusout', function (e) { if (!box.contains(e.relatedTarget)) deactivate(); });
+    } else {
+      // touch: tap to start, tap the thumbnail to go back
+      box.addEventListener('click', function (e) {
+        if (!isOn()) { activate(); e.stopPropagation(); e.preventDefault(); }
+        else if (fig && fig.contains(e.target)) { deactivate(); e.stopPropagation(); }
+      }, true);
+    }
   }
 
   function thumbs() {
@@ -105,13 +136,6 @@
     var papers = document.querySelectorAll('.paper[data-scene]');
     Array.prototype.forEach.call(papers, mountPaper);
 
-    var u = document.getElementById('name-underline');
-    if (u) doodle(u, 'underline', { w: 420, h: 34 });
-    var pd = document.getElementById('portrait-doodle');
-    if (pd) doodle(pd, 'portrait', { w: 500, h: 500 });
-    Array.prototype.forEach.call(document.querySelectorAll('[data-doodle]'), function (s) {
-      doodle(s, s.getAttribute('data-doodle'), { w: 240, h: 14 });
-    });
   }
 
   // wait (briefly) for the handwriting font so text is measured correctly

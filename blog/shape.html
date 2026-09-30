@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Shape of Information | Atharva Pandey</title>
+  <meta name="description" content="A walk from a Mars rover's steering commands to Shannon's entropy.">
+  <meta name="theme-color" content="#f3eee2">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <script>try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <link rel="preload" href="../assets/fonts/roboto.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/caveat.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/blog.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="container">
+      <a class="brand" href="../index.html">Atharva Pandey</a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="../index.html#blog">Blog</a>
+        <a href="../index.html#work">Work</a>
+        <button class="btn btn-icon theme-toggle" type="button" aria-label="Toggle light / dark">
+          <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="post">
+    <p class="crumb"><a href="../index.html#blog">← All writing</a></p>
+    <p class="kicker">essay</p>
+    <h1>The Shape of Information</h1>
+    <p class="dek">A walk from a Mars rover&rsquo;s steering commands to Shannon&rsquo;s entropy.</p>
+    <p class="byline">Atharva Pandey · Sep 30, 2026 · Also on <a href="https://atharvapandey1.substack.com/p/the-shape-of-information" target="_blank" rel="noopener">Substack</a></p>
+
+    <p>In 1948, a mathematician at Bell Labs named Claude Shannon was chewing on a question that sounds almost too simple to be profound: <strong>can information be measured?</strong></p>
+    <p>This was a practical question. Every symbol sent down a telegraph line, through an undersea cable, or over a radio link cost real money. Engineers were paying, quite literally, by the bit. So two questions mattered. Could a message written in something wasteful, like ordinary English, be <em>recoded</em> into fewer symbols without losing anything? And is there a <strong>floor</strong>, a hard limit past which no amount of cleverness can squeeze a message any further?</p>
+    <p>Shannon answered both. The answer to the second question is a single formula that now sits at the heart of every zip file, every video stream, and every cell in your phone’s radio. The formula is often presented as a definition, which hides the reasoning that produced it. We will reconstruct that reasoning with a rover, a marker, and a square.</p>
+    <hr>
+    <h2>A payload on Mars</h2>
+    <p>Imagine we’ve landed a small rover on Mars, and we steer it from Earth. The deep-space link is agonizingly slow and every transmitted bit costs power, time, and bandwidth. The rover understands four commands:</p>
+    <blockquote><strong>FORWARD · BACK · LEFT · RIGHT</strong></blockquote>
+    <p>Radio gives us two symbols to work with: 0 and 1. Each command must therefore be spelled as a string of bits. The most natural spelling uses two bits for each of the four commands.</p>
+    <blockquote><strong>↑ FORWARD</strong>: <code>00</code><br><strong>↓ BACK</strong>: <code>01</code><br><strong>← LEFT</strong>: <code>10</code><br><strong>→ RIGHT</strong>: <code>11</code></blockquote>
+    <p>There’s a picture hiding in that codebook. Read a codeword bit by bit: each 0 branches left, each 1 branches right. Every code is secretly a <strong>binary tree</strong>, and each command lives at the end of a path.</p>
+    <p><em>Each bit is a fork in the road. Four commands, two forks each: an average of 2 bits per command.</em></p>
+    <figure class="paperfig"><img src="../assets/blog/shape/ce22d99e-e01a-4a2b-8945-682b93fa173d_840x470.gif" alt="Four commands, equally likely, on a balanced tree" width="840" height="470" loading="lazy"></figure>
+    <p>Two bits per command. Can we do better? Before we try, there is a rule of the game we need to make explicit.</p>
+    <hr>
+    <h2>The rule: no codeword may sit above another</h2>
+    <p>The rover doesn’t receive commands one at a time in neat envelopes. It receives one <strong>unbroken stream</strong> of bits: <code>000111001101…</code> There are no commas in radio. So the rover must know, the instant a codeword ends, that it has ended.</p>
+    <p>Suppose we’d assigned FORWARD = <code>0</code> and BACK = <code>01</code>. The stream begins <code>0…</code>. Is that FORWARD, or the first half of BACK? The rover has to wait, and sometimes waiting doesn’t even resolve it. The fix is a simple discipline: <strong>no codeword may be a prefix of another.</strong> In tree language, codewords may only sit at the <em>ends</em> of branches, at leaves, with nothing hanging below them.</p>
+    <p>That discipline has a price. The moment you claim a node as a codeword, everything beneath it becomes unusable. No later codeword can hang below that node.</p>
+    <p><em>Claim a shallow node and half the tree vanishes with it. Claim a deep one and you barely spend anything. Depth is exactly how much of the tree a codeword consumes.</em></p>
+    <figure class="paperfig"><img src="../assets/blog/shape/cf88e0f0-9027-45e0-aa48-8e3f29fc3ee8_840x470.gif" alt="Claiming a node erases the whole subtree beneath it" width="840" height="470" loading="lazy"></figure>
+    <p>Now consider a tempting idea. Give FORWARD the one-bit code <code>0</code>. Claiming <code>0</code> wipes out half the tree, so the other three commands must crowd into what remains, at depths 2, 3, and 3. If all four commands are used equally often, the average comes out to ¼·(1+2+3+3) = <strong>2.25 bits</strong>, which is <em>worse</em> than the plain two-bit code.</p>
+    <p><em>One command got cheaper; three got more expensive. Under equal use, the balanced tree was already optimal.</em></p>
+    <figure class="paperfig"><img src="../assets/blog/shape/33528ab3-27a6-4b30-b16a-2d24e690771f_840x470.gif" alt="The greedy short code backfires" width="840" height="470" loading="lazy"></figure>
+    <p>So with four equally likely commands, 2 bits is the honest best. Fine. But that “equally likely” was doing a lot of quiet work.</p>
+    <hr>
+    <h2>The distribution changes everything</h2>
+    <p>A few weeks into the mission, telemetry comes back. The rover spends most of its life driving <strong>FORWARD</strong>: half of all commands. BACK is a quarter. LEFT and RIGHT are an eighth each.</p>
+    <p>Re-run the same comparison with these frequencies and the result changes. The lopsided tree now wins:</p>
+    <div class="eqn">½·1 + ¼·2 + ⅛·3 + ⅛·3 = <strong>1.75 bits per command.</strong></div>
+    <p><em>Changing the command frequencies changes which tree is cheaper. The shortest codes should go to the most frequent commands.</em></p>
+    <figure class="paperfig"><img src="../assets/blog/shape/79c12923-b432-4f99-8636-3b3f6e3ef02c_840x470.gif" alt="Same two trees with new probabilities; the lopsided tree wins" width="840" height="470" loading="lazy"></figure>
+    <p>Before moving on, squint at those depths: the ½ command sits at depth <strong>1</strong>, the ¼ command at depth <strong>2</strong>, the ⅛ commands at depth <strong>3</strong>. In every case, depth = −log₂(probability). File that away. It will not turn out to be a coincidence.</p>
+    <hr>
+    <h2>Three commands, and an awkward question</h2>
+    <p>The mission expands. A second, simpler probe launches. It understands only <strong>FORWARD, LEFT, RIGHT</strong>, and it uses all three about equally.</p>
+    <p>The lazy code assigns two bits each and simply never uses <code>11</code>. Average: 2 bits, with a whole codeword rotting unused. We can do better by rebalancing the tree: give FORWARD the code <code>0</code>, LEFT <code>10</code>, RIGHT <code>11</code>. Average: ⅓·(1+2+2) = <strong>1.67 bits</strong>. Better!</p>
+    <p><em>1.67 beats 2.00. One question remains: is 1.67 actually the floor, or is it simply the best whole-bit answer?</em></p>
+    <figure class="paperfig"><img src="../assets/blog/shape/b4af82f0-eba3-4756-9e21-8602be693492_840x470.gif" alt="Three commands: the wasteful code versus the rebalanced one" width="840" height="470" loading="lazy"></figure>
+    <p>Trees only offer whole-number depths: 1, 2, 3, and so on. This makes the phrase “best possible” difficult to examine. A different picture will help.</p>
+    <hr>
+    <h2>The budget square</h2>
+    <p>Take a square with area 1. This square contains the <strong>entire coding budget</strong>: every codeword we could assign, collected in one place. We can represent a code by carving the square into tiles, one tile per command.</p>
+    <p>Each bit makes a cut. The first bit slices the square in half: the left half contains codewords starting with <code>0</code>, and the right half contains those starting with <code>1</code>. The second bit halves one of those regions again. A codeword of length ℓ is a tile reached after ℓ cuts. Since every cut halves the area:</p>
+    <div class="eqn"><strong>area of a tile = ½ ^ (length of its codeword)</strong></div>
+    <p><em>Long codeword → many cuts → tiny tile. Short codeword → few cuts → big tile. And the tiles of a complete code fill the square exactly: ½ + ¼ + ⅛ + ⅛ = 1.</em></p>
+    <figure class="paperfig"><img src="../assets/blog/shape/dcb581e0-103f-4987-a0cd-ca81fa46c927_840x470.gif" alt="The tree unfolds into a square: bits are cuts, area is ½^length" width="840" height="470" loading="lazy"></figure>
+    <p>Everything we learned from trees translates instantly, and gets <em>easier to see</em>:</p>
+    <ul><li><strong>The prefix rule</strong> is now just “tiles don’t overlap.” Claiming a node was erasing a subtree; here, claiming a tile simply <em>uses up that part of the square</em>, and nobody else can have it.</li><li><strong>The rationing intuition</strong> is physical: the square is scarce. Give one command a big tile and everyone else gets slivers. Thus, <strong>rare commands should get the small tiles</strong>. A long codeword costs little when it is seldom sent.</li><li><strong>Waste is visible.</strong> If some bitstring is never assigned, its tile sits there grey and unused.</li></ul>
+    <p>We can see the waste directly by drawing the lazy two-bit code for the three-command probe on the square:</p>
+    <p><em>The </em><code>11</code><em> tile can never arrive. A quarter of the budget is wasted. Grey patches are compression left on the table; a fully compressed code leaves no grey.</em></p>
+    <figure class="paperfig"><img src="../assets/blog/shape/ad6cf20b-6583-40c2-b5f7-7d0cfd426ef6_840x470.gif" alt="The naive three-command code leaves a grey tile" width="840" height="470" loading="lazy"></figure>
+    <p>So we rebalance, as before, into {<code>0</code>, <code>10</code>, <code>11</code>}. The grey disappears and the square is full. Have we reached the floor?</p>
+    <p><em>No grey left. But look closely: FORWARD holds a ½ tile and is used ⅓ of the time. The tiles fill the square, yet their sizes don’t match the job.</em></p>
+    <figure class="paperfig"><img src="../assets/blog/shape/c15d4cb6-dbae-4fed-b744-21642466fa8a_840x470.gif" alt="Huffman fills the square, but the tiles clash with the probabilities" width="840" height="470" loading="lazy"></figure>
+    <p>A ½ tile is doing a ⅓ job. The square is fully spent, yet the allocation is wrong. The tree cannot correct it because binary cuts produce only halves, quarters, eighths, and so on. This suggests a new question:</p>
+    <p><strong>Could a tile have an area that isn’t a power of ½, say exactly ⅓?</strong></p>
+    <hr>
+    <h2>Depth, unchained</h2>
+    <p>On the square, there’s nothing stopping us. Draw a region of any area you like. And its “length” comes straight from the same law that governed every tile so far, just read in reverse:</p>
+    <div class="eqn"><strong>ℓ = −log₂(area)</strong></div>
+    <p>A tile of area ½ costs one cut, so its length is 1. A tile of area ¼ has length 2. A tile of area ⅓ has length −log₂(⅓) ≈ <strong>1.585 bits</strong>, a <em>fraction</em> of a bit. Tree depth, which used to advance in whole steps, has become continuous.</p>
+    <p><em>Slide the tile to any size; its length slides with it, right off the whole-number grid. The discrete tree was just the special case where every tile landed on a grid line.</em></p>
+    <figure class="paperfig"><img src="../assets/blog/shape/67432031-b200-408a-a1f1-0350334c2a2c_840x470.gif" alt="A tile of any area: depth becomes a continuum" width="840" height="470" loading="lazy"></figure>
+    <p>(A single 1.585-bit codeword does not physically exist. Codewords contain a whole number of bits. However, if we collect many commands into blocks and encode those blocks, the average cost per command approaches these fractional values. The square describes this limiting cost; individual whole-bit codewords approximate it.)</p>
+    <p>Now line up the two facts the square has quietly handed us. First, the tiles of a full code exactly fill the square:</p>
+    <div class="eqn"><strong>Σ 2^(−ℓᵢ) = Σ areaᵢ = 1</strong></div>
+    <p>Second, the command probabilities also sum to one, since <em>some</em> command is always sent:</p>
+    <div class="eqn"><strong>Σ pᵢ = 1</strong></div>
+    <p>Two quantities, both budgets, both of size exactly 1: the areas we <em>choose</em>, and the frequencies the world <em>imposes</em>. The entire problem of compression is now one sentence: <strong>spend the first budget as wisely as possible given the second.</strong></p>
+    <hr>
+    <h2>The optimization</h2>
+    <p>Say the command probabilities are p₁, …, pₙ, and we assign tile areas a₁, …, aₙ. Each use of command <em>i</em> costs its length, −log₂ aᵢ, and command <em>i</em> arrives a fraction pᵢ of the time. So the expected cost per command is:</p>
+    <pre class="code">minimize   L(a) = − Σᵢ pᵢ · log₂(aᵢ)
+subject to        Σᵢ aᵢ = 1
+</pre>
+    <p>This is a textbook job for a Lagrange multiplier. Form the Lagrangian:</p>
+    <pre class="code">𝓛 = − Σᵢ pᵢ log₂ aᵢ  +  λ ( Σᵢ aᵢ − 1 )
+</pre>
+    <p>Differentiate with respect to each aᵢ and set to zero (writing ln 2 into the multiplier to keep things tidy):</p>
+    <pre class="code">∂𝓛/∂aᵢ = − pᵢ / aᵢ + λ = 0     ⟹     aᵢ = pᵢ / λ
+</pre>
+    <p>Every optimal area is proportional to its probability. The constraint pins down the constant:</p>
+    <pre class="code">Σᵢ aᵢ = (1/λ) Σᵢ pᵢ = 1/λ = 1     ⟹     λ = 1
+</pre>
+    <p>So the minimizer is simply:</p>
+    <p><strong>aᵢ = pᵢ: give every command a tile equal to its probability.</strong></p>
+    <p>Here are the four rover commands (½, ¼, ⅛, ⅛), with the tile allocation changing and the expected cost tracked underneath. Every allocation except one pays an extra cost.</p>
+    <p><em>Make a tile too large or too small, and the cost rises. The floor is reached at a = p.</em></p>
+    <figure class="paperfig"><img src="../assets/blog/shape/745e54a8-5b48-46fc-ba7f-3f09452c460a_840x470.gif" alt="The cost bottoms out exactly when every tile equals its probability" width="840" height="470" loading="lazy"></figure>
+    <p>Substitute the optimal areas back into the expected cost:</p>
+    <div class="eqn"><strong>L = − Σᵢ pᵢ log₂(aᵢ) = − Σᵢ pᵢ log₂(pᵢ)</strong></div>
+    <p>The floor on compression, the number no code can beat, is therefore:</p>
+    <h2>H = − Σ p log₂ p</h2>
+    <p>We can read entropy as the average number of cuts required when every command receives a tile equal to its probability. For our rover, H = 1.75 bits, and the lopsided tree we found by hand achieves it because its probabilities happen to be powers of ½. For the three-command probe, H = log₂ 3 ≈ <strong>1.585 bits</strong>, below the 1.67 achieved by the best whole-bit tree. The difference comes from rounding. Individual codewords need a whole number of bits, while the ideal lengths may be fractional. Coding commands in large blocks makes this gap approach zero.</p>
+    <p>Shannon’s answer is yes: information <em>can</em> be measured. A predictable stream, in which one command holds nearly all the probability, has one large tile and costs almost nothing. A stream in which every command is equally likely has equal tiles and the greatest possible cost. Entropy measures that average cost in bits.</p>
+    <p>We began with four steering commands. The same accounting gave us a general measure of information.</p>
+
+    <p class="post-end">Originally published on <a href="https://atharvapandey1.substack.com/p/the-shape-of-information" target="_blank" rel="noopener">Substack</a>. Subscribe there for new posts.</p>
+  </main>
+
+  <footer id="contact">
+    <div class="container">
+      <div><p class="sign">Atharva Pandey</p><p>© <span id="year">2026</span> · drawn in code</p></div>
+      <div class="foot-links">
+        <a class="btn btn-sm" href="../index.html">Home</a>
+        <a class="btn btn-sm" href="https://scholar.google.com/citations?user=NfsKI5kAAAAJ&amp;hl=en" target="_blank" rel="noopener">Google Scholar</a>
+        <a class="btn btn-sm" href="https://github.com/Atharvap14" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn btn-sm" href="https://www.linkedin.com/in/atpan/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/theme.js"></script>
+</body>
+</html>

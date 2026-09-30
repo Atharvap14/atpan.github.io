@@ -472,6 +472,27 @@
     ok.pop(12200); st1.pop(12500);
   };
 
+  // thumbnail for "The Shape of Information": a binary code tree and the budget square it fills
+  SCENES.shape = function (sk) {
+    var lv = [[[190, 90]], [[110, 200], [270, 200]], [[70, 310], [150, 310], [230, 310], [310, 310]]];
+    var nodes = [], edges = [];
+    lv.forEach(function (row, d) { row.forEach(function (p, i) { nodes.push(sk.circle(p[0], p[1], d === 2 ? 15 : 17, { fill: d === 2 ? 'shade' : null })); if (d) edges.push(sk.line(lv[d - 1][Math.floor(i / 2)][0], lv[d - 1][Math.floor(i / 2)][1] + 17, p[0], p[1] - 16, { w: 2.6 })); }); });
+    var sq = sk.rect(450, 90, 280, 280, { r: 4 });
+    var half = sk.line(590, 90, 590, 370, { w: 2.6 });
+    var q1 = sk.line(590, 230, 730, 230, { w: 2.6 });
+    var q2 = sk.line(660, 230, 660, 370, { w: 2.6 });
+    var f1 = sk.rect(456, 96, 128, 268, { hatch: true, hs: 9, c: 'gray', w: 1.6 });
+    var f2 = sk.rect(596, 96, 128, 128, { hatch: true, hs: 14, c: 'gray', w: 1.6 });
+    var arrow = sk.arrow(340, 230, 440, 230, { bend: 0.05 });
+    var wave = sk.wave(90, 440, 620, 0, 1, { c: 'faint', w: 2 });
+    nodes.slice(0, 1).concat(edges.slice(0, 2)).forEach(function (n, i) { n.draw(i * 350, 500); });
+    var t = 1200;
+    nodes.slice(1).forEach(function (n, i) { n.draw(t + i * 220, 400); });
+    edges.slice(2).forEach(function (e, i) { e.draw(t + 300 + i * 220, 350); });
+    arrow.draw(3200, 600); sq.draw(3800, 900); half.draw(4700, 500); q1.draw(5100, 400); q2.draw(5450, 400);
+    f1.draw(5900, 700); f2.draw(6400, 600);
+  };
+
   /* ------------------------------------------------------------------ page doodles (play once) */
   SCENES.underline = function (sk) {
     var u = sk.path([[6, 20], [90, 14], [180, 21], [270, 13], [352, 19], [414, 12]], { w: 4.2 });

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Do language models reason — or just remember? — Atharva Pandey</title>
+  <meta name="description" content="An interactive explainer of DeduCE: grading the chain of thought as a proof, and why LLM accuracy decays with reasoning hops but not with premises.">
+  <meta name="theme-color" content="#f3eee2">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231b1a17'/%3E%3Cpath d='M17 47 L32 15 L47 47 M23 37 H41' stroke='%23f3eee2' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <script>try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <link rel="preload" href="../assets/fonts/roboto.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/caveat.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/blog.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="container">
+      <a class="brand" href="../index.html">Atharva Pandey</a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="../index.html#blog">Blog</a>
+        <a href="../index.html#work">Work</a>
+        <button class="btn btn-icon theme-toggle" type="button" aria-label="Toggle light / dark">
+          <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="post">
+    <p class="crumb"><a href="../index.html#blog">← All writing</a></p>
+    <p class="kicker">explainer · arXiv 2025</p>
+    <h1>Do language models reason — or just remember? Count the hops</h1>
+    <p class="dek">Frontier models ace Olympiad problems and still stumble on high-school maths they haven&rsquo;t seen. DeduCE measures <em class="hl">where</em> that breaks: not in reading the problem, but in chaining the steps.</p>
+    <p class="byline">Atharva Pandey · Sept 2026 · Based on <a href="https://arxiv.org/abs/2504.07080" target="_blank" rel="noopener">DeduCE (arXiv 2504.07080)</a> with K. Dubey, R. Sharma and A. Sharma</p>
+
+    <div class="paper solo" data-scene="deduce">
+      <div class="sketch"><svg class="sk" role="img" aria-label="Sketch: adding more premises leaves accuracy flat, but in a chain of dominoes standing for reasoning hops the later ones never fall and accuracy decays."></svg></div>
+    </div>
+
+    <h2>The problem with final answers</h2>
+    <p>Benchmarks like GSM8K report one number: did the final answer match? That number can hide a lot. If a model has seen a problem (or near copies) in training, a right answer says little about whether it can <em>deduce</em> anything. So instead of grading the answer, DeduCE grades the reasoning.</p>
+
+    <h2>A chain of thought is a proof</h2>
+    <p>Think of an ideal deductive reasoner: given a set of premises, it can derive valid conclusions over any number of hops. DeduCE compares a language model to that ideal by treating its chain of thought as a proof and checking partial traces against a reference proof built from the original problem. Two skills are measured separately:</p>
+    <ul>
+      <li><strong>Understanding premises</strong> &mdash; how well does the model cope as the input gets longer and holds more premises?</li>
+      <li><strong>Inferring conclusions</strong> &mdash; how well can it chain multiple reasoning hops?</li>
+    </ul>
+
+    <div class="fig" id="fig-walk"></div>
+
+    <p>Because existing benchmarks may be memorised, the pipeline evaluates models on <em class="hl">novel, perturbed versions</em> of benchmark problems: templatise a problem, then vary how many premises it has and how many hops its solution needs.</p>
+
+    <h2>What they found</h2>
+    <p>On novel grade-school maths problems (GSM8K), models are fairly robust to more input premises but lose accuracy as the number of reasoning hops grows &mdash; deductive consistency falls by roughly 15&ndash;30% from one hop to five. The failures are not mainly due to a shift in language style or to early errors propagating; they come from a more basic limit in chaining hops. On the original benchmark the decay is invisible, because memorisation masks it. On a synthetic dataset with more solution steps, asking the model to deduce step by step did not remove the decay.</p>
+
+    <div class="fig" id="fig-decay"></div>
+
+    <div class="note"><p><strong>About these figures.</strong> The bakery problem is invented for illustration, and Figure 2 is a schematic of the paper&rsquo;s findings rather than its plots.</p></div>
+
+    <h2>Why it matters</h2>
+    <p>If you evaluate a model only on published benchmarks, you may be measuring recall. Perturbing problems &mdash; and counting hops &mdash; tells you how much reasoning is actually left when the answer can&rsquo;t be looked up.</p>
+    <p class="post-end">Read the paper: <a href="https://arxiv.org/abs/2504.07080" target="_blank" rel="noopener">arXiv</a></p>
+  </main>
+
+  <footer id="contact">
+    <div class="container">
+      <div><p class="sign">Atharva Pandey</p><p>© <span id="year">2026</span> · drawn in code</p></div>
+      <div class="foot-links">
+        <a class="btn btn-sm" href="../index.html">Home</a>
+        <a class="btn btn-sm" href="https://scholar.google.com/citations?user=NfsKI5kAAAAJ&amp;hl=en" target="_blank" rel="noopener">Google Scholar</a>
+        <a class="btn btn-sm" href="https://github.com/Atharvap14" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn btn-sm" href="https://www.linkedin.com/in/atpan/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/theme.js"></script>
+  <script src="../js/sketch.js"></script>
+  <script src="../js/glyphs.js"></script>
+  <script src="../js/scenes.js"></script>
+  <script src="../js/main.js"></script>
+  <script src="../js/viz.js"></script>
+  <script src="../js/blog-deduce.js"></script>
+</body>
+</html>
